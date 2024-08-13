@@ -36,7 +36,7 @@ func GetEmailFunc(ctx context.Context, config oauth2.Config, token *oauth2.Token
 	}
 
 	if len(emails) == 0 {
-		return nil, fmt.Errorf("failed to get email by github OAuth2: email not found")
+		return nil, fmt.Errorf("failed to get email: not found")
 	}
 	return emails, nil
 }

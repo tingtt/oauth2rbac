@@ -11,3 +11,7 @@ test:
 .PHONY: build
 build:
 	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO) build -o proxy cmd/proxy/main.go
+
+.PHONY: build-docker
+build-docker:
+	docker build -t oauth2rbac --build-arg GO_ENTRYPOINT='cmd/proxy/main.go' .

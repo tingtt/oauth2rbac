@@ -1,0 +1,33 @@
+services:
+  oauth2rbac:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - ../../:/go/src/app
+      - type: bind
+        source: config.yml
+        target: /etc/oauth2rbac/config.yml
+    ports:
+      - "${PORT}:8080"
+    entrypoint: ["go", "run", "cmd/proxy/main.go"]
+    command:
+      [
+        "--port",
+        "8080",
+        "--jwt-secret",
+        "${JWT_SECRET}",
+        "-f",
+        "/etc/oauth2rbac/config.yml",
+        "--oauth2-client",
+        "github;${OAUTH2_GITHUB}",
+        "--oauth2-client",
+        "google;${OAUTH2_GOOGLE}",
+      ]
+    tty: true
+
+  target:
+    image: nginx:latest
+    ports:
+      - 80

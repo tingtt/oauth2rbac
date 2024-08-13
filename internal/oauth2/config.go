@@ -13,7 +13,7 @@ type Config = oauth2.Config
 type Service interface {
 	Config() Config
 	AuthCodeURL(redirectUrl string) string
-	Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
+	Exchange(ctx context.Context, code string, redirectURL string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
 	GetEmail(ctx context.Context, token *oauth2.Token) (emails []string, err error)
 }
 
@@ -45,8 +45,10 @@ func state() string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func (c *config) Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
-	return c.value.Exchange(ctx, code, opts...)
+func (c *config) Exchange(ctx context.Context, code string, redirectURL string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
+	config := c.Config() /* copy as base config */
+	config.RedirectURL = redirectURL
+	return config.Exchange(ctx, code, opts...)
 }
 
 func (c *config) GetEmail(ctx context.Context, token *oauth2.Token) (emails []string, err error) {
