@@ -59,7 +59,7 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	})
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	w.Write([]byte(clientSideRedirectHTML("/")))
 }
 
 func scopesFromEmails(emails []string, whiltelist acl.Pool) []acl.Scope {
@@ -76,4 +76,23 @@ func scopesFromEmails(emails []string, whiltelist acl.Pool) []acl.Scope {
 		keys = append(keys, s)
 	}
 	return keys
+}
+
+func clientSideRedirectHTML(url string) string {
+	return fmt.Sprintf(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=%s">
+    <script type="text/javascript">
+        window.location.href = "%s";
+    </script>
+    <title>Redirecting...</title>
+</head>
+<body>
+    <p>If you are not redirected automatically, follow this <a href="%s">link</a>.</p>
+</body>
+</html>
+`, url, url, url)
 }
