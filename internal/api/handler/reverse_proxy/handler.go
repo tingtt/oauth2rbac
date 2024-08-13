@@ -1,10 +1,13 @@
 package reverseproxy
 
 import (
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"oauth2rbac/internal/util/slices"
 	"strings"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -41,46 +44,35 @@ func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if req.URL.Scheme == "" {
 		req.URL.Scheme = "http"
 	}
-	requestURL := req.URL.Scheme + "://" + req.Host + req.URL.Path
+	requestURL := req.URL.Scheme + "://" + req.Host + req.RequestURI
 
 	token, err := h.jwt.Decode(jwtauth.TokenFromCookie(req))
 	if err != nil {
-		fmt.Printf("failed to decode token from Cookie: %v\n", err)
-		http.Redirect(res, req, loginURLWithRedirectURL(requestURL), http.StatusFound)
-		return
-	}
-	claims := token.PrivateClaims()
-
-	whitelistClaim, exist := claims["scopes_whitelist"]
-	if !exist {
-		fmt.Println("claim not found: scopes_whitelist")
-		http.Redirect(res, req, loginURLWithRedirectURL(requestURL), http.StatusFound)
-		return
-	}
-	whitelist, ok := whitelistClaim.([]interface{})
-	if !ok {
-		fmt.Println("invalid format claims: scopes_whitelist")
 		http.Redirect(res, req, loginURLWithRedirectURL(requestURL), http.StatusFound)
 		return
 	}
 
-	allowed := false
-	for _, scope := range whitelist {
-		if strings.HasPrefix(requestURL, fmt.Sprint(scope)) {
-			allowed = true
-			break
-		}
+	whitelist, err := inspectWhitelistClaim(token.PrivateClaims())
+	if err != nil {
+		slog.Error(err.Error())
+		http.Redirect(res, req, loginURLWithRedirectURL(requestURL), http.StatusFound)
+		return
 	}
+
+	allowed := slices.Some(whitelist, func(scope string) bool {
+		return strings.HasPrefix(requestURL, scope)
+	})
 	if !allowed {
 		http.Error(res, "Forbidden", http.StatusForbidden)
 		return
 	}
 
-	if proxy, exists := h.proxies[req.Host]; exists {
-		proxy.ServeHTTP(res, req)
-	} else {
+	proxy, exists := h.proxies[req.Host]
+	if !exists {
 		http.Error(res, "Not Found", http.StatusNotFound)
+		return
 	}
+	proxy.ServeHTTP(res, req)
 }
 
 func loginURLWithRedirectURL(redirectURL string) string {
@@ -88,4 +80,18 @@ func loginURLWithRedirectURL(redirectURL string) string {
 		"/.auth/login?redirect_url=%s",
 		url.QueryEscape(redirectURL),
 	)
+}
+
+func inspectWhitelistClaim(claims map[string]interface{}) ([]string, error) {
+	whitelistClaim, exist := claims["scopes_whitelist"]
+	if !exist {
+		return nil, errors.New("claim not found: scopes_whitelist")
+	}
+	whitelist, ok := whitelistClaim.([]interface{})
+	if !ok {
+		return nil, errors.New("invalid format claims: scopes_whitelist")
+	}
+	return slices.Map(whitelist, func(item interface{}) string {
+		return fmt.Sprint(item)
+	}), nil
 }

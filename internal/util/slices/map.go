@@ -1,5 +1,13 @@
 package slices
 
+func Map[T1, T2 any](slice []T1, yield func(T1) T2) []T2 {
+	newSlice := make([]T2, 0, len(slice))
+	for _, value := range slice {
+		newSlice = append(newSlice, yield(value))
+	}
+	return newSlice
+}
+
 func MapE[T1, T2 any](slice []T1, yield func(T1) (T2, error)) ([]T2, error) {
 	newSlice := make([]T2, 0, len(slice))
 	for _, value := range slice {
@@ -10,4 +18,13 @@ func MapE[T1, T2 any](slice []T1, yield func(T1) (T2, error)) ([]T2, error) {
 		newSlice = append(newSlice, newValue)
 	}
 	return newSlice, nil
+}
+
+func Some[T1 any](slice []T1, yield func(T1) bool) bool {
+	for _, value := range slice {
+		if yield(value) {
+			return true
+		}
+	}
+	return false
 }
