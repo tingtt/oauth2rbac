@@ -19,7 +19,7 @@ type CLIOption struct {
 func Load() (CLIOption, error) {
 	port := pflag.Uint16("port", 8080, "Port to listen")
 	jwtSignKey := pflag.String("jwt-secret", "", "JWT sign secret")
-	oauth2Clients := pflag.StringArray("oauth2-client", nil, "Google OAuth2 Client ID (format: `<ProviderName>;<ClientID>;<ClientSecret>`)")
+	oauth2Clients := pflag.StringArray("oauth2-client", nil, "OAuth2 (format: `<ProviderName>;<ClientID>;<ClientSecret>`)")
 	manifestFilePath := pflag.StringP("/etc/oauth2rbac/config.file", "f", "", "Manifest file path")
 	pflag.Parse()
 
