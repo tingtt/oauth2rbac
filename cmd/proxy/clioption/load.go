@@ -1,6 +1,7 @@
 package clioption
 
 import (
+	"crypto/tls"
 	"oauth2rbac/internal/acl"
 	reverseproxy "oauth2rbac/internal/api/handler/reverse_proxy"
 	"oauth2rbac/internal/oauth2"
@@ -14,6 +15,7 @@ type CLIOption struct {
 	JWTSignKey     string
 	RevProxyConfig reverseproxy.Config
 	ACL            acl.Pool
+	X509KeyPairs   []tls.Certificate
 }
 
 func Load() (CLIOption, error) {
@@ -21,6 +23,7 @@ func Load() (CLIOption, error) {
 	jwtSignKey := pflag.String("jwt-secret", "", "JWT sign secret")
 	oauth2Clients := pflag.StringArray("oauth2-client", nil, "OAuth2 (format: `<ProviderName>;<ClientID>;<ClientSecret>`)")
 	manifestFilePath := pflag.StringP("/etc/oauth2rbac/config.file", "f", "", "Manifest file path")
+	x509KeyPairs := pflag.StringArray("tls-cert", nil, "x509 key pair (format: `<CertFilePath>;<KeyFilePath>`)")
 	pflag.Parse()
 
 	if err := checkJWTSignKey(*jwtSignKey); err != nil {
@@ -37,11 +40,17 @@ func Load() (CLIOption, error) {
 		return CLIOption{}, err
 	}
 
+	certs, err := tlsCerts(*x509KeyPairs)
+	if err != nil {
+		return CLIOption{}, err
+	}
+
 	return CLIOption{
 		Port:           *port,
 		OAuth2:         oauth2Config,
 		JWTSignKey:     *jwtSignKey,
 		RevProxyConfig: revProxyConfig,
 		ACL:            acl,
+		X509KeyPairs:   certs,
 	}, nil
 }

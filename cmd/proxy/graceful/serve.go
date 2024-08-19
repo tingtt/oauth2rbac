@@ -2,6 +2,7 @@ package graceful
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"log/slog"
@@ -23,6 +24,10 @@ func Serve(cliOption clioption.CLIOption) error {
 			cliOption.RevProxyConfig,
 			cliOption.ACL,
 		),
+	}
+
+	if /* TLS cert/key specified */ len(cliOption.X509KeyPairs) != 0 {
+		server.TLSConfig = &tls.Config{Certificates: cliOption.X509KeyPairs}
 	}
 
 	serverCtx, serverStopCtx := context.WithCancel(context.Background())
@@ -52,7 +57,12 @@ func Serve(cliOption clioption.CLIOption) error {
 	}()
 
 	slog.Info(fmt.Sprintf("Starting HTTP Server. Listening at %s.", server.Addr))
-	err := server.ListenAndServe()
+	var err error
+	if /* TLS cert/key specified */ len(cliOption.X509KeyPairs) != 0 {
+		err = server.ListenAndServeTLS("", "")
+	} else {
+		err = server.ListenAndServe()
+	}
 	if err != nil && err != http.ErrServerClosed {
 		return err
 	}
