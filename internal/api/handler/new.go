@@ -23,6 +23,11 @@ func New(oauth2Config map[string]oauth2.Service, jwtSignKey string, revProxyConf
 
 	r.Use(jwtauth.Verifier(oauth2Handler.JWT))
 
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("healthy"))
+	})
+
 	r.Route("/.auth", func(r chi.Router) {
 		r.Get("/login", oauth2Handler.SelectProvider)
 		r.Get("/{oauthProvider}/login", oauth2Handler.Login)
