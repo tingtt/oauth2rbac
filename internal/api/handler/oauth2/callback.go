@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"oauth2rbac/internal/acl"
+	"regexp"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -63,12 +64,20 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(clientSideRedirectHTML("/")))
 }
 
-func scopesFromEmails(emails []string, whiltelist acl.Pool) []acl.Scope {
+func scopesFromEmails(emails []string, whitelist acl.Pool) []acl.Scope {
 	scopeMap := make(map[acl.Scope]bool, 0)
 	for _, email := range emails {
-		if scopes, allowed := whiltelist[acl.Email(email)]; allowed {
-			for _, scope := range scopes {
-				scopeMap[scope] = true
+		for allowedEmail, scopes := range whitelist {
+			// Convert the email pattern to a regex pattern
+			regexPattern := fmt.Sprintf("^%s$", allowedEmail)
+			regexPattern = regexp.MustCompile(`\.`).ReplaceAllString(regexPattern, `\.`)
+			regex := regexp.MustCompile(regexPattern)
+
+			// Check if the email matches the regex pattern
+			if regex.MatchString(email) {
+				for _, scope := range scopes {
+					scopeMap[scope] = true
+				}
 			}
 		}
 	}
