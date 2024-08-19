@@ -11,6 +11,7 @@ func (h *Handler) Login(w http.ResponseWriter, req *http.Request) {
 	oauth2, supported := h.OAuth2[providerName]
 	if !supported {
 		http.Redirect(w, req, "/.auth/login", http.StatusTemporaryRedirect)
+		return
 	}
 
 	if req.URL.Scheme == "" {

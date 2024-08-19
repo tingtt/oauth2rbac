@@ -18,6 +18,7 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 	oauth2, supported := h.OAuth2[providerName]
 	if !supported {
 		http.Redirect(w, r, fmt.Sprintf("/.auth/login/%s", r.URL.RawQuery), http.StatusTemporaryRedirect)
+		return
 	}
 
 	oauth2Token, err := oauth2.Exchange(ctx, r.FormValue("code"), "http://"+r.Host+r.URL.Path)
