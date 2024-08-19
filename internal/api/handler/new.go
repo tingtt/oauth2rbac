@@ -29,7 +29,7 @@ func New(oauth2Config map[string]oauth2.Service, jwtSignKey string, revProxyConf
 		r.Get("/{oauthProvider}/callback", oauth2Handler.Callback)
 	})
 
-	rpFunc := reverseproxy.NewReverseProxyHandler(revProxyConfig, oauth2Handler.JWT).ServeHTTP
+	rpFunc := reverseproxy.NewReverseProxyHandler(revProxyConfig, oauth2Handler.JWT, acl["-"]).ServeHTTP
 	r.HandleFunc("/*", rpFunc)
 	return r
 }

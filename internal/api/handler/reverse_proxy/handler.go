@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"oauth2rbac/internal/acl"
 	"oauth2rbac/internal/util/slices"
 	"strings"
 
@@ -27,17 +28,18 @@ type Host struct {
 }
 
 type handler struct {
-	proxies map[string]*httputil.ReverseProxy
-	jwt     *jwtauth.JWTAuth
+	proxies         map[string]*httputil.ReverseProxy
+	jwt             *jwtauth.JWTAuth
+	publicEndpoints []acl.Scope
 }
 
-func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth) *handler {
+func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints []acl.Scope) *handler {
 	proxies := make(map[string]*httputil.ReverseProxy, len(config.Proxies))
 	for _, host := range config.Proxies {
 		proxy := httputil.NewSingleHostReverseProxy(host.Target.URL)
 		proxies[host.ExternalURL.Host] = proxy
 	}
-	return &handler{proxies, jwt}
+	return &handler{proxies, jwt, publicEndpoints}
 }
 
 func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -45,6 +47,19 @@ func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		req.URL.Scheme = "http"
 	}
 	requestURL := req.URL.Scheme + "://" + req.Host + req.RequestURI
+
+	publicEndpoint := slices.Some(h.publicEndpoints, func(scope acl.Scope) bool {
+		return strings.HasPrefix(requestURL, string(scope))
+	})
+	if publicEndpoint {
+		proxy, exists := h.proxies[req.Host]
+		if !exists {
+			http.Error(res, "Not Found", http.StatusNotFound)
+			return
+		}
+		proxy.ServeHTTP(res, req)
+		return
+	}
 
 	token, err := h.jwt.Decode(jwtauth.TokenFromCookie(req))
 	if err != nil {

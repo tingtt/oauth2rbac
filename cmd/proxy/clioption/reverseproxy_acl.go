@@ -50,6 +50,26 @@ func RevProxyACL(yamlFilePath string) (reverseproxy.Config, acl.Pool, error) {
 	return reverseproxy.Config{Proxies: proxies}, manifest.ACL, nil
 }
 
+// Example usage:
+//
+//	```yaml
+//	proxies:
+//	  - external_url: "http://www.example.com/"
+//	    target: "http://www:80/"
+//	  - external_url: "http://docs.example.com/"
+//	    target: "http://docs:80/"
+//	  - external_url: "http://admin.example.com/"
+//	    target: "http://admin:80/"
+//	acl:
+//	  "-":                             # public
+//	    - "http://www.example.com/"
+//	  "*":                             # allow all signed-in user
+//	    - "http://docs.example.com/"
+//	  "*@gmail.com":                   # allow all gmail user
+//	    - "http://docs.example.com/"
+//	  "example@gmail.com":             # allow specified gmail user
+//	    - "http://admin.example.com/"
+//	```
 func loadRevProxyACLManifest(yamlFilePath string) (*RevProxyACLManifest, error) {
 	data, err := os.ReadFile(yamlFilePath)
 	if err != nil {
