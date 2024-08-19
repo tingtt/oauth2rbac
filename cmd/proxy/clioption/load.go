@@ -20,7 +20,7 @@ func Load() (CLIOption, error) {
 	port := pflag.Uint16("port", 8080, "Port to listen")
 	jwtSignKey := pflag.String("jwt-secret", "", "JWT sign secret")
 	oauth2Clients := pflag.StringArray("oauth2-client", nil, "Google OAuth2 Client ID (format: `<ProviderName>;<ClientID>;<ClientSecret>`)")
-	manifestFilePath := pflag.StringP("config.file", "f", "", "Manifest file path")
+	manifestFilePath := pflag.StringP("/etc/oauth2rbac/config.file", "f", "", "Manifest file path")
 	pflag.Parse()
 
 	if err := checkJWTSignKey(*jwtSignKey); err != nil {
