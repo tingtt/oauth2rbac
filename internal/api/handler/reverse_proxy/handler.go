@@ -45,7 +45,7 @@ func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints
 
 func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	reqURL := urlutil.RequestURL(req,
-		req.Header.Get("X-Forwarded-Protocol"),
+		req.Header.Get("X-Forwarded-Scheme"),
 		req.Header.Get("X-Forwarded-Host"),
 		req.Header.Get("X-Forwarded-Port"),
 	)
