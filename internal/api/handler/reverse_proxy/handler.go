@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"oauth2rbac/internal/acl"
+	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"oauth2rbac/internal/util/slices"
 	"strings"
 
@@ -43,16 +44,17 @@ func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints
 }
 
 func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if req.URL.Scheme == "" {
-		req.URL.Scheme = "http"
-	}
-	requestURL := req.URL.Scheme + "://" + req.Host + req.RequestURI
+	reqURL := urlutil.RequestURL(req,
+		req.Header.Get("X-Forwarded-Protocol"),
+		req.Header.Get("X-Forwarded-Host"),
+		req.Header.Get("X-Forwarded-Port"),
+	)
 
 	publicEndpoint := slices.Some(h.publicEndpoints, func(scope acl.Scope) bool {
-		return strings.HasPrefix(requestURL, string(scope))
+		return strings.HasPrefix(reqURL.String(), string(scope))
 	})
 	if publicEndpoint {
-		proxy, exists := h.proxies[req.Host]
+		proxy, exists := h.proxies[reqURL.Host]
 		if !exists {
 			http.Error(res, "Not Found", http.StatusNotFound)
 			return
@@ -63,19 +65,19 @@ func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	token, err := h.jwt.Decode(jwtauth.TokenFromCookie(req))
 	if err != nil {
-		http.Redirect(res, req, loginURLWithRedirectURL(requestURL), http.StatusFound)
+		http.Redirect(res, req, loginURLWithRedirectURL(reqURL.String()), http.StatusFound)
 		return
 	}
 
 	whitelist, err := inspectWhitelistClaim(token.PrivateClaims())
 	if err != nil {
 		slog.Error(err.Error())
-		http.Redirect(res, req, loginURLWithRedirectURL(requestURL), http.StatusFound)
+		http.Redirect(res, req, loginURLWithRedirectURL(reqURL.String()), http.StatusFound)
 		return
 	}
 
 	allowed := slices.Some(whitelist, func(scope string) bool {
-		return strings.HasPrefix(requestURL, scope)
+		return strings.HasPrefix(reqURL.String(), scope)
 	})
 	if !allowed {
 		http.Error(res, "Forbidden", http.StatusForbidden)

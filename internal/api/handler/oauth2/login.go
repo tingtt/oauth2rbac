@@ -2,6 +2,7 @@ package oauth2
 
 import (
 	"net/http"
+	urlutil "oauth2rbac/internal/api/handler/util/url"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -14,9 +15,11 @@ func (h *Handler) Login(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if req.URL.Scheme == "" {
-		req.URL.Scheme = "http"
-	}
-	callbackURL := req.URL.Scheme + "://" + req.Host + "/.auth/" + providerName + "/callback"
+	reqURL := urlutil.RequestURL(req,
+		req.Header.Get("X-Forwarded-Protocol"),
+		req.Header.Get("X-Forwarded-Host"),
+		req.Header.Get("X-Forwarded-Port"),
+	)
+	callbackURL := reqURL.Scheme + "://" + reqURL.Host + "/.auth/" + providerName + "/callback"
 	http.Redirect(w, req, oauth2.AuthCodeURL(callbackURL), http.StatusTemporaryRedirect)
 }
