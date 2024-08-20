@@ -22,6 +22,7 @@ type Config struct {
 type Proxy struct {
 	ExternalURL *url.URL
 	Target      Host
+	SetHeaders  map[string]string
 }
 
 type Host struct {
@@ -36,11 +37,23 @@ type handler struct {
 
 func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints []acl.Scope) *handler {
 	proxies := make(map[string]*httputil.ReverseProxy, len(config.Proxies))
-	for _, host := range config.Proxies {
-		proxy := httputil.NewSingleHostReverseProxy(host.Target.URL)
-		proxies[host.ExternalURL.Host] = proxy
+	for _, proxy := range config.Proxies {
+		revProxy := httputil.NewSingleHostReverseProxy(proxy.Target.URL)
+		revProxy.Director = setHeaderDirector(proxy.SetHeaders)
+		proxies[proxy.ExternalURL.Host] = revProxy
 	}
 	return &handler{proxies, jwt, publicEndpoints}
+}
+
+func setHeaderDirector(headers map[string]string) func(req *http.Request) {
+	if headers == nil {
+		return nil
+	}
+	return func(req *http.Request) {
+		for key, value := range headers {
+			req.Header.Set(key, value)
+		}
+	}
 }
 
 func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {

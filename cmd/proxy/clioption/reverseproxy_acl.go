@@ -17,8 +17,9 @@ type RevProxyACLManifest struct {
 }
 
 type proxy struct {
-	ExternalURL string `yaml:"external_url"`
-	Target      string `yaml:"target"`
+	ExternalURL string            `yaml:"external_url"`
+	Target      string            `yaml:"target"`
+	SetHeaders  map[string]string `yaml:"set_headers"`
 }
 
 func RevProxyACL(yamlFilePath string) (reverseproxy.Config, acl.Pool, error) {
@@ -41,6 +42,7 @@ func RevProxyACL(yamlFilePath string) (reverseproxy.Config, acl.Pool, error) {
 		return reverseproxy.Proxy{
 			ExternalURL: fromURL,
 			Target:      reverseproxy.Host{URL: targetURL},
+			SetHeaders:  proxy.SetHeaders,
 		}, nil
 	})
 	if err != nil {
