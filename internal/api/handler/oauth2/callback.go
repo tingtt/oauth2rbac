@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"oauth2rbac/internal/acl"
+	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"regexp"
 	"time"
 
@@ -12,26 +13,33 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 )
 
-func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
-	providerName := chi.URLParam(r, "oauthProvider")
+	providerName := chi.URLParam(req, "oauthProvider")
 
 	oauth2, supported := h.OAuth2[providerName]
 	if !supported {
-		http.Redirect(w, r, fmt.Sprintf("/.auth/login/%s", r.URL.RawQuery), http.StatusTemporaryRedirect)
+		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
 		return
 	}
 
-	oauth2Token, err := oauth2.Exchange(ctx, r.FormValue("code"), "http://"+r.Host+r.URL.Path)
+	reqURL := urlutil.RequestURL(req,
+		req.Header.Get("X-Forwarded-Scheme"),
+		req.Header.Get("X-Forwarded-Host"),
+		req.Header.Get("X-Forwarded-Port"),
+	)
+	redirectURL := reqURL.Scheme + "://" + reqURL.Host + "/.auth/" + providerName + "/callback"
+
+	oauth2Token, err := oauth2.Exchange(ctx, req.FormValue("code"), redirectURL)
 	if err != nil {
 		fmt.Printf("failed to exchange code to token (provider: %s): %v\n", providerName, err)
-		http.Redirect(w, r, fmt.Sprintf("/.auth/login/%s", r.URL.RawQuery), http.StatusTemporaryRedirect)
+		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
 		return
 	}
 	emails, err := oauth2.GetEmail(ctx, oauth2Token)
 	if err != nil {
 		fmt.Printf("failed to get email (%s): %v\n", providerName, err)
-		http.Redirect(w, r, fmt.Sprintf("/.auth/login/%s", r.URL.RawQuery), http.StatusTemporaryRedirect)
+		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
 		return
 	}
 	scopes := scopesFromEmails(emails, h.Whiltelist)
