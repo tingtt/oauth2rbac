@@ -3,7 +3,7 @@ package main
 import (
 	"log/slog"
 	"oauth2rbac/cmd/proxy/clioption"
-	"oauth2rbac/cmd/proxy/graceful"
+	"oauth2rbac/cmd/proxy/server"
 	"os"
 )
 
@@ -21,5 +21,5 @@ func run() error {
 		return err
 	}
 
-	return graceful.Serve(cliOption)
+	return server.Serve(cliOption)
 }
