@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"oauth2rbac/internal/acl"
+	logutil "oauth2rbac/internal/api/handler/util/log"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"oauth2rbac/internal/util/slices"
 	"strings"
@@ -64,35 +65,44 @@ func handleReverceProxyError(res http.ResponseWriter, inReq *http.Request, err e
 	res.WriteHeader(http.StatusBadGateway)
 }
 
-func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
+	res := &logutil.CustomResponseWriter{ResponseWriter: rw}
+	logInfo := logutil.InfoLogger(reqURL, req.Method)
 
 	if publicEndpoint(h.publicEndpoints, reqURL) {
 		proxy, exists := h.proxies[reqURL.Host]
 		if !exists {
 			http.Error(res, "Not Found", http.StatusNotFound)
+			logInfo(res, "proxy target not found")
 			return
 		}
 		proxy.ServeHTTP(res, req)
+		logInfo(res)
 		return
 	}
 
 	allowed, err := checkScope(h.jwt.Decode, req, reqURL)
 	if err != nil {
-		http.Redirect(res, req, loginURLWithRedirectURL(reqURL.String()), http.StatusFound)
+		redurectURL := loginURLWithRedirectURL(reqURL.String())
+		http.Redirect(res, req, redurectURL, http.StatusFound)
+		logInfo(res, redurectURL, "(request login)")
 		return
 	}
 	if !allowed {
 		http.Error(res, "Forbidden", http.StatusForbidden)
+		logInfo(res, "no access to scope")
 		return
 	}
 
 	proxy, exists := h.proxies[reqURL.Host]
 	if !exists {
 		http.Error(res, "Not Found", http.StatusNotFound)
+		logInfo(res, "proxy target not found")
 		return
 	}
 	proxy.ServeHTTP(res, req)
+	logInfo(res)
 }
 
 func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL) bool {
