@@ -15,11 +15,7 @@ func (h *Handler) Login(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	reqURL := urlutil.RequestURL(req,
-		req.Header.Get("X-Forwarded-Scheme"),
-		req.Header.Get("X-Forwarded-Host"),
-		req.Header.Get("X-Forwarded-Port"),
-	)
+	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
 	callbackURL := reqURL.Scheme + "://" + reqURL.Host + "/.auth/" + providerName + "/callback"
 	http.Redirect(w, req, oauth2.AuthCodeURL(callbackURL), http.StatusTemporaryRedirect)
 }

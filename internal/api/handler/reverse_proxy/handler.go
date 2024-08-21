@@ -57,11 +57,7 @@ func setHeaderDirector(headers map[string]string) func(req *http.Request) {
 }
 
 func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	reqURL := urlutil.RequestURL(req,
-		req.Header.Get("X-Forwarded-Scheme"),
-		req.Header.Get("X-Forwarded-Host"),
-		req.Header.Get("X-Forwarded-Port"),
-	)
+	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
 
 	publicEndpoint := slices.Some(h.publicEndpoints, func(scope acl.Scope) bool {
 		return strings.HasPrefix(reqURL.String(), string(scope))

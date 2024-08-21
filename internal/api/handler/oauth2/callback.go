@@ -23,11 +23,7 @@ func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	reqURL := urlutil.RequestURL(req,
-		req.Header.Get("X-Forwarded-Scheme"),
-		req.Header.Get("X-Forwarded-Host"),
-		req.Header.Get("X-Forwarded-Port"),
-	)
+	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
 	redirectURL := reqURL.Scheme + "://" + reqURL.Host + "/.auth/" + providerName + "/callback"
 
 	oauth2Token, err := oauth2.Exchange(ctx, req.FormValue("code"), redirectURL)
