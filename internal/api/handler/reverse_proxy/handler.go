@@ -41,18 +41,19 @@ func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints
 	proxies := make(map[string]*httputil.ReverseProxy, len(config.Proxies))
 	for _, proxy := range config.Proxies {
 		revProxy := httputil.NewSingleHostReverseProxy(proxy.Target.URL)
-		revProxy.Director = setHeaderDirector(proxy.SetHeaders)
+		revProxy.Director = setHeaderDirector(revProxy.Director, proxy.SetHeaders)
 		revProxy.ErrorHandler = handleReverceProxyError
 		proxies[proxy.ExternalURL.Host] = revProxy
 	}
 	return &handler{proxies, jwt, publicEndpoints}
 }
 
-func setHeaderDirector(headers map[string]string) func(req *http.Request) {
+func setHeaderDirector(defaultDirector func(*http.Request), headers map[string]string) func(req *http.Request) {
 	if headers == nil {
-		return nil
+		return defaultDirector
 	}
 	return func(req *http.Request) {
+		defaultDirector(req)
 		for key, value := range headers {
 			req.Header.Set(key, value)
 		}
