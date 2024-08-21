@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
 type Config struct {
@@ -66,10 +67,7 @@ func handleReverceProxyError(res http.ResponseWriter, inReq *http.Request, err e
 func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
 
-	publicEndpoint := slices.Some(h.publicEndpoints, func(scope acl.Scope) bool {
-		return strings.HasPrefix(reqURL.String(), string(scope))
-	})
-	if publicEndpoint {
+	if publicEndpoint(h.publicEndpoints, reqURL) {
 		proxy, exists := h.proxies[reqURL.Host]
 		if !exists {
 			http.Error(res, "Not Found", http.StatusNotFound)
@@ -79,33 +77,43 @@ func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	token, err := h.jwt.Decode(jwtauth.TokenFromCookie(req))
+	allowed, err := checkScope(h.jwt.Decode, req, reqURL)
 	if err != nil {
 		http.Redirect(res, req, loginURLWithRedirectURL(reqURL.String()), http.StatusFound)
 		return
 	}
-
-	whitelist, err := inspectWhitelistClaim(token.PrivateClaims())
-	if err != nil {
-		slog.Error(err.Error())
-		http.Redirect(res, req, loginURLWithRedirectURL(reqURL.String()), http.StatusFound)
-		return
-	}
-
-	allowed := slices.Some(whitelist, func(scope string) bool {
-		return strings.HasPrefix(reqURL.String(), scope)
-	})
 	if !allowed {
 		http.Error(res, "Forbidden", http.StatusForbidden)
 		return
 	}
 
-	proxy, exists := h.proxies[req.Host]
+	proxy, exists := h.proxies[reqURL.Host]
 	if !exists {
 		http.Error(res, "Not Found", http.StatusNotFound)
 		return
 	}
 	proxy.ServeHTTP(res, req)
+}
+
+func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL) bool {
+	return slices.Some(publicEndpoints, func(scope acl.Scope) bool {
+		return strings.HasPrefix(reqURL.String(), string(scope))
+	})
+}
+
+func checkScope(jwtDecode func(string) (jwt.Token, error), req *http.Request, reqURL url.URL) (allowed bool, _ error) {
+	token, err := jwtDecode(jwtauth.TokenFromCookie(req))
+	if err != nil {
+		return false, err
+	}
+	whitelist, err := inspectWhitelistClaim(token.PrivateClaims())
+	if err != nil {
+		return false, err
+	}
+	allowed = slices.Some(whitelist, func(scope string) bool {
+		return strings.HasPrefix(reqURL.String(), scope)
+	})
+	return allowed, nil
 }
 
 func loginURLWithRedirectURL(redirectURL string) string {
