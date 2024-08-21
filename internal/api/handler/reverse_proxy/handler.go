@@ -40,6 +40,7 @@ func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints
 	for _, proxy := range config.Proxies {
 		revProxy := httputil.NewSingleHostReverseProxy(proxy.Target.URL)
 		revProxy.Director = setHeaderDirector(proxy.SetHeaders)
+		revProxy.ErrorHandler = handleReverceProxyError
 		proxies[proxy.ExternalURL.Host] = revProxy
 	}
 	return &handler{proxies, jwt, publicEndpoints}
@@ -54,6 +55,12 @@ func setHeaderDirector(headers map[string]string) func(req *http.Request) {
 			req.Header.Set(key, value)
 		}
 	}
+}
+
+func handleReverceProxyError(res http.ResponseWriter, inReq *http.Request, err error) {
+	inReqURL := urlutil.RequestURL(*inReq.URL, urlutil.WithRequest(inReq), urlutil.WithXForwardedHeaders(inReq.Header))
+	slog.Error("http: proxy error", slog.String("host", inReqURL.Host), slog.String("error", err.Error()))
+	res.WriteHeader(http.StatusBadGateway)
 }
 
 func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
