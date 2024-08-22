@@ -9,7 +9,6 @@ import (
 	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
 	handleroption "oauth2rbac/internal/api/handler/util/option"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
-	"oauth2rbac/internal/util/options"
 	"oauth2rbac/internal/util/tree"
 	"strings"
 
@@ -24,9 +23,7 @@ type handler struct {
 	cookieController cookieutil.Controller
 }
 
-func NewReverseProxyHandler(config Config, jwtAuth *jwtauth.JWTAuth, publicEndpoints []acl.Scope, _options ...handleroption.Applier) *handler {
-	option := options.Create(_options...)
-
+func NewReverseProxyHandler(config Config, option *handleroption.Option) *handler {
 	proxies := make(map[string]*httputil.ReverseProxy, len(config.Proxies))
 	var rootProxyMatchKeys *tree.Node[string]
 	numberOfCharactersDescendinig := func(new, curr string) (isLeft bool) {
@@ -44,9 +41,9 @@ func NewReverseProxyHandler(config Config, jwtAuth *jwtauth.JWTAuth, publicEndpo
 	return &handler{
 		proxyMatchKeys,
 		proxies,
-		jwtAuth,
-		publicEndpoints,
-		cookieutil.NewController(option.UsingTLS),
+		option.JWTAuth,
+		option.ScopeProvider.PublicEndpoints(),
+		option.CookieController,
 	}
 }
 

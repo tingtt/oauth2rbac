@@ -9,6 +9,7 @@ import (
 )
 
 type ScopeProvider interface {
+	PublicEndpoints() []Scope
 	Get(emails []Email) []Scope
 }
 type matcher interface {
@@ -24,11 +25,15 @@ func NewScopeProvider(whitelist Pool) ScopeProvider {
 type scopeProvider struct {
 	matcher   matcher
 	cache     map[string][]Scope
-	Whitelist Pool
+	whitelist Pool
+}
+
+func (p *scopeProvider) PublicEndpoints() []Scope {
+	return p.whitelist["-"]
 }
 
 func (p scopeProvider) initializeCache() {
-	for email, scopes := range p.Whitelist {
+	for email, scopes := range p.whitelist {
 		if strings.Contains(string(email), "*") {
 			continue
 		}
@@ -44,7 +49,7 @@ func (p scopeProvider) get(email Email) []Scope {
 	}
 	slog.Debug(fmt.Sprintf("acl: scope cache not exists (%s)", email))
 
-	scopes := p.matcher.match(email, p.Whitelist)
+	scopes := p.matcher.match(email, p.whitelist)
 	p.cache[string(email)] = scopes
 	return scopes
 }

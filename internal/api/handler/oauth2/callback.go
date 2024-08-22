@@ -17,7 +17,7 @@ func (h *handler) Callback(w http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
 	providerName := chi.URLParam(req, "oauthProvider")
 
-	oauth2, supported := h.oAuth2[providerName]
+	oauth2, supported := h.oauth2[providerName]
 	if !supported {
 		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
 		return

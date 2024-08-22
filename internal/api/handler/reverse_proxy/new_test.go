@@ -1,6 +1,7 @@
 package reverseproxy
 
 import (
+	handleroption "oauth2rbac/internal/api/handler/util/option"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,10 +15,11 @@ func TestNewReverseProxyHandler(t *testing.T) {
 		{ExternalURL: "http://example.com/base/"},
 		{ExternalURL: "http://example.com/-/healthz"},
 	}}
+	handlerOption, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithTLS(false))
 
 	t.Run("proxyMatchKeys may sorted descending order by number of characters", func(t *testing.T) {
 		t.Parallel()
-		h := NewReverseProxyHandler(config, nil, nil)
+		h := NewReverseProxyHandler(config, handlerOption)
 
 		assert.Equal(t, h.proxyMatchKeys, []string{
 			"http://example.com/-/healthz",

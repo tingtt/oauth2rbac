@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	handleroption "oauth2rbac/internal/api/handler/util/option"
 	"oauth2rbac/internal/util/slices"
 	"strconv"
 	"strings"
@@ -50,6 +51,7 @@ func Test_handler_matchProxy(t *testing.T) {
 	type test[T any] struct {
 		name   string
 		config Config
+		option *handleroption.Option
 		req    arg
 		want   T
 	}
@@ -62,19 +64,24 @@ func Test_handler_matchProxy(t *testing.T) {
 			{ExternalURL: "https://example.com/api/", Target: Target{"http://app:3000"}},
 			{ExternalURL: "https://example.com/longbasepath/", Target: Target{"http://longesthost:3000"}},
 		}}
+		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithTLS(false))
+
 		tests := []test[wantProxy]{
 			{
 				config: config,
+				option: option,
 				req:    arg{http.MethodGet, "https://example.com/path/to/proxy"},
 				want:   wantProxy{"http://web:80/path/to/proxy"},
 			},
 			{
 				config: config,
+				option: option,
 				req:    arg{http.MethodGet, "https://example.com/api/endpoint"},
 				want:   wantProxy{"http://app:3000/api/endpoint"},
 			},
 			{
 				config: config,
+				option: option,
 				req:    arg{http.MethodGet, "https://example.com/longbasepath/"},
 				want:   wantProxy{"http://longesthost:3000/longbasepath/"},
 			},
@@ -103,13 +110,13 @@ func Test_handler_matchProxy(t *testing.T) {
 					return &req, match, &res
 				}(tt.req, tt.want)
 
-				proxy, mockTransport := func(config Config, reqURL url.URL) (*httputil.ReverseProxy, *MockTransport) {
-					proxy := NewReverseProxyHandler(config, nil, nil).matchProxy(reqURL)
+				proxy, mockTransport := func(config Config, option *handleroption.Option, reqURL url.URL) (*httputil.ReverseProxy, *MockTransport) {
+					proxy := NewReverseProxyHandler(config, option).matchProxy(reqURL)
 					assert.NotNil(t, proxy)
 					mockTransport := new(MockTransport)
 					proxy.Transport = mockTransport
 					return proxy, mockTransport
-				}(tt.config, *req.URL)
+				}(tt.config, tt.option, *req.URL)
 				rw := new(MockResponseWriter)
 
 				mockTransport.On("RoundTrip", mock.MatchedBy(wantRequestURI)).Return(resFixedReturn, nil)
@@ -127,16 +134,20 @@ func Test_handler_matchProxy(t *testing.T) {
 			{ExternalURL: "https://example.com/api/", Target: Target{"http://app1:3000/"}},
 			{ExternalURL: "https://example.com/api/with/baseurl/", Target: Target{"http://app2:3000"}},
 		}}
+		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithTLS(false))
+
 		tests := []test[wantProxy]{
 			{
 				name:   "base url will cut off",
 				config: config,
+				option: option,
 				req:    arg{http.MethodGet, "https://example.com/api/path/to/proxy"},
 				want:   wantProxy{"http://app1:3000/path/to/proxy"},
 			},
 			{
 				name:   "base url will remain",
 				config: config,
+				option: option,
 				req:    arg{http.MethodGet, "https://example.com/api/with/baseurl/path/to/proxy"},
 				want:   wantProxy{"http://app2:3000/api/with/baseurl/path/to/proxy"},
 			},
@@ -148,7 +159,7 @@ func Test_handler_matchProxy(t *testing.T) {
 
 				reqURL, _ := url.Parse(tt.req.url)
 
-				proxy := NewReverseProxyHandler(tt.config, nil, nil).matchProxy(*reqURL)
+				proxy := NewReverseProxyHandler(tt.config, tt.option).matchProxy(*reqURL)
 				assert.NotNil(t, proxy)
 				proxy.Director(&http.Request{
 					Method:     tt.req.method,
@@ -190,9 +201,12 @@ func Test_handler_matchProxy(t *testing.T) {
 				SetHeaders:  map[string][]string{"X-Custom-Header": {"proxied"}},
 			},
 		}}
+		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithTLS(false))
+
 		tests := []test[wantProxyWithHeader]{
 			{
 				config: config,
+				option: option,
 				req:    arg{http.MethodGet, "https://example.com/path/to/proxy"},
 				want: wantProxyWithHeader{
 					"http://web:80/path/to/proxy",
@@ -201,6 +215,7 @@ func Test_handler_matchProxy(t *testing.T) {
 			},
 			{
 				config: config,
+				option: option,
 				req:    arg{http.MethodGet, "https://example.com/api/endpoint"},
 				want: wantProxyWithHeader{
 					"http://app:3000/api/endpoint",
@@ -209,6 +224,7 @@ func Test_handler_matchProxy(t *testing.T) {
 			},
 			{
 				config: config,
+				option: option,
 				req:    arg{http.MethodGet, "https://example.com/longbasepath/"},
 				want: wantProxyWithHeader{
 					"http://longesthost:3000/longbasepath/",
@@ -223,7 +239,7 @@ func Test_handler_matchProxy(t *testing.T) {
 
 				reqURL, _ := url.Parse(tt.req.url)
 
-				proxy := NewReverseProxyHandler(tt.config, nil, nil).matchProxy(*reqURL)
+				proxy := NewReverseProxyHandler(tt.config, tt.option).matchProxy(*reqURL)
 				assert.NotNil(t, proxy)
 				req := &http.Request{
 					Method:     tt.req.method,

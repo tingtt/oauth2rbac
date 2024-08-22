@@ -3,23 +3,19 @@ package oauth2handler
 import (
 	"oauth2rbac/internal/acl"
 	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
+	handleroption "oauth2rbac/internal/api/handler/util/option"
 	"oauth2rbac/internal/oauth2"
 
 	"github.com/go-chi/jwtauth/v5"
 )
 
 type handler struct {
+	oauth2           map[string]oauth2.Service
 	JWTAuth          *jwtauth.JWTAuth
-	oAuth2           map[string]oauth2.Service
 	scope            acl.ScopeProvider
 	cookieController cookieutil.Controller
 }
 
-func New(jwtAuth *jwtauth.JWTAuth, oauth2 map[string]oauth2.Service, scope acl.ScopeProvider, cookieController cookieutil.Controller) handler {
-	return handler{
-		JWTAuth:          jwtAuth,
-		oAuth2:           oauth2,
-		scope:            scope,
-		cookieController: cookieController,
-	}
+func New(oauth2 map[string]oauth2.Service, option *handleroption.Option) handler {
+	return handler{oauth2, option.JWTAuth, option.ScopeProvider, option.CookieController}
 }
