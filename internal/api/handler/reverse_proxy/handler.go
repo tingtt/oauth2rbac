@@ -33,7 +33,7 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	allowed, err := checkScope(h.jwt.Decode, req, reqURL)
-	if /*  */ err != nil {
+	if /* unauthorized */ err != nil {
 		redurectURL := loginURLWithRedirectURL(reqURL.String())
 		h.cookieController.SetRedirectURLForAfterLogin(res, reqURL.String())
 		http.Redirect(res, req, redurectURL, http.StatusFound)
