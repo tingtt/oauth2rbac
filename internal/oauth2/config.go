@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"oauth2rbac/internal/acl"
-	"oauth2rbac/internal/util/slices"
 
 	"golang.org/x/oauth2"
 )
@@ -54,10 +53,5 @@ func (c *config) Exchange(ctx context.Context, code string, redirectURL string, 
 }
 
 func (c *config) GetEmail(ctx context.Context, token *oauth2.Token) ([]acl.Email, error) {
-	_emails, err := c.getEmailFunc(ctx, *c.value, token)
-	if err != nil {
-		return nil, err
-	}
-	emails := slices.Map(_emails, func(email string) acl.Email { return acl.Email(email) })
-	return emails, nil
+	return c.getEmailFunc(ctx, *c.value, token)
 }

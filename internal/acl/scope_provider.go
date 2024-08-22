@@ -55,7 +55,7 @@ func (p scopeProvider) get(email Email) []Scope {
 }
 
 func (p scopeProvider) Get(emails []Email) []Scope {
-	cacheKey := strings.Join(slices.Map(emails, func(e Email) string { return string(e) }), ";")
+	cacheKey := strings.Join(emails, ";")
 	if scopes, hit := p.cache[cacheKey]; hit {
 		slog.Debug(fmt.Sprintf("acl: scope cache hit (%s)", cacheKey))
 		return scopes
