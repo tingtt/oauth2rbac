@@ -24,12 +24,13 @@ func Serve(cliOption clioption.CLIOption) error {
 		),
 	}
 
-	slog.Info(fmt.Sprintf("Starting HTTP Server. Listening at %s.", server.Addr))
 	var err error
 	if usingTLS {
 		server.TLSConfig = &tls.Config{Certificates: cliOption.X509KeyPairs}
+		slog.Info(fmt.Sprintf("Starting HTTPS Server. Listening at %s.", server.Addr))
 		err = server.ListenAndServeTLS("", "")
 	} else {
+		slog.Info(fmt.Sprintf("Starting HTTP Server. Listening at %s.", server.Addr))
 		err = server.ListenAndServe()
 	}
 	if err != nil && err != http.ErrServerClosed {
