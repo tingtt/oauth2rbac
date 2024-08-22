@@ -3,6 +3,7 @@ package cookieutil
 import (
 	"net/http"
 	logutil "oauth2rbac/internal/api/handler/util/log"
+	"strings"
 	"time"
 )
 
@@ -24,6 +25,10 @@ type controller struct {
 }
 
 func (c *controller) SetRedirectURLForAfterLogin(res *logutil.CustomResponseWriter, reqURL string) {
+	if c.skipSetRedirectURLForAfterLogin(reqURL) {
+		return
+	}
+
 	http.SetCookie(res, &http.Cookie{
 		Name:     COOKIE_KEY_REDIRECT_URL_FOR_AFTER_LOGIN,
 		Value:    reqURL,
@@ -34,6 +39,10 @@ func (c *controller) SetRedirectURLForAfterLogin(res *logutil.CustomResponseWrit
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode, // use Lax mode (https://issues.chromium.org/issues/40508226)
 	})
+}
+
+func (c *controller) skipSetRedirectURLForAfterLogin(reqURL string) bool {
+	return strings.HasSuffix(reqURL, "/favicon.ico")
 }
 
 func (c *controller) SetJWT(rw http.ResponseWriter, jwt string) {
