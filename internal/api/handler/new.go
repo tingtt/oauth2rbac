@@ -12,13 +12,13 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 )
 
-func New(oauth2Config map[string]oauth2.Service, jwtSignKey string, revProxyConfig reverseproxy.Config, acl acl.Pool) http.Handler {
+func New(oauth2Config map[string]oauth2.Service, jwtSignKey string, revProxyConfig reverseproxy.Config, _acl acl.Pool) http.Handler {
 	r := chi.NewRouter()
 
 	oauth2Handler := oauth2h.Handler{
-		JWT:        jwt.NewAuth(jwtSignKey),
-		OAuth2:     oauth2Config,
-		Whiltelist: acl,
+		JWT:    jwt.NewAuth(jwtSignKey),
+		OAuth2: oauth2Config,
+		Scope:  acl.NewScopeProvider(_acl),
 	}
 
 	r.Use(jwtauth.Verifier(oauth2Handler.JWT))
@@ -34,7 +34,7 @@ func New(oauth2Config map[string]oauth2.Service, jwtSignKey string, revProxyConf
 		r.Get("/{oauthProvider}/callback", oauth2Handler.Callback)
 	})
 
-	rpFunc := reverseproxy.NewReverseProxyHandler(revProxyConfig, oauth2Handler.JWT, acl["-"]).ServeHTTP
+	rpFunc := reverseproxy.NewReverseProxyHandler(revProxyConfig, oauth2Handler.JWT, _acl["-"]).ServeHTTP
 	r.HandleFunc("/*", rpFunc)
 	return r
 }

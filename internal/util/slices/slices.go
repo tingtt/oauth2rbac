@@ -1,5 +1,7 @@
 package slices
 
+import "slices"
+
 func Map[T1, T2 any](slice []T1, yield func(T1) T2) []T2 {
 	newSlice := make([]T2, 0, len(slice))
 	for _, value := range slice {
@@ -36,4 +38,8 @@ func Find[T any](slice []T, yield func(T) bool) *T {
 		}
 	}
 	return nil
+}
+
+func Compact[S ~[]E, E comparable](s S) S {
+	return slices.Compact(s)
 }

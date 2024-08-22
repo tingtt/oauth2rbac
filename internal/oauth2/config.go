@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"oauth2rbac/internal/acl"
+	"oauth2rbac/internal/util/slices"
 
 	"golang.org/x/oauth2"
 )
@@ -14,7 +16,7 @@ type Service interface {
 	Config() Config
 	AuthCodeURL(redirectUrl string) string
 	Exchange(ctx context.Context, code string, redirectURL string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
-	GetEmail(ctx context.Context, token *oauth2.Token) (emails []string, err error)
+	GetEmail(ctx context.Context, token *oauth2.Token) (emails []acl.Email, err error)
 }
 
 func New(
@@ -51,6 +53,11 @@ func (c *config) Exchange(ctx context.Context, code string, redirectURL string, 
 	return config.Exchange(ctx, code, opts...)
 }
 
-func (c *config) GetEmail(ctx context.Context, token *oauth2.Token) (emails []string, err error) {
-	return c.getEmailFunc(ctx, *c.value, token)
+func (c *config) GetEmail(ctx context.Context, token *oauth2.Token) ([]acl.Email, error) {
+	_emails, err := c.getEmailFunc(ctx, *c.value, token)
+	if err != nil {
+		return nil, err
+	}
+	emails := slices.Map(_emails, func(email string) acl.Email { return acl.Email(email) })
+	return emails, nil
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type Handler struct {
-	JWT        *jwtauth.JWTAuth
-	OAuth2     map[string]oauth2.Service
-	Whiltelist acl.Pool
+	JWT    *jwtauth.JWTAuth
+	OAuth2 map[string]oauth2.Service
+	Scope  acl.ScopeProvider
 }

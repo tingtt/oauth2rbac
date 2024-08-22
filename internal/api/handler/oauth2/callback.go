@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"oauth2rbac/internal/acl"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
-	"regexp"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -38,7 +36,7 @@ func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
 		return
 	}
-	scopes := scopesFromEmails(emails, h.Whiltelist)
+	scopes := h.Scope.Get(emails)
 	if len(scopes) == 0 {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Forbidden"))
@@ -66,30 +64,6 @@ func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 	w.Write([]byte(clientSideRedirectHTML("/")))
-}
-
-func scopesFromEmails(emails []string, whitelist acl.Pool) []acl.Scope {
-	scopeMap := make(map[acl.Scope]bool, 0)
-	for _, email := range emails {
-		for allowedEmail, scopes := range whitelist {
-			// Convert the email pattern to a regex pattern
-			regexPattern := fmt.Sprintf("^%s$", allowedEmail)
-			regexPattern = regexp.MustCompile(`\.`).ReplaceAllString(regexPattern, `\.`)
-			regex := regexp.MustCompile(regexPattern)
-
-			// Check if the email matches the regex pattern
-			if regex.MatchString(email) {
-				for _, scope := range scopes {
-					scopeMap[scope] = true
-				}
-			}
-		}
-	}
-	keys := make([]acl.Scope, 0, len(scopeMap))
-	for s := range scopeMap {
-		keys = append(keys, s)
-	}
-	return keys
 }
 
 func clientSideRedirectHTML(url string) string {
