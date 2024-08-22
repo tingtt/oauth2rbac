@@ -102,7 +102,7 @@ spec:
     spec:
       containers:
         - name: oauth2rbac
-          image: tingtt/oauth2rbac:v0.4.2
+          image: tingtt/oauth2rbac:v0.4.3
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -251,7 +251,7 @@ Change deployment and service.
       spec:
         containers:
           - name: oauth2rbac
-            image: tingtt/oauth2rbac:v0.4.2
+            image: tingtt/oauth2rbac:v0.4.3
             # ...other configuration omitted...
             args:
               [
