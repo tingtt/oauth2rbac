@@ -3,12 +3,17 @@ package oauth2
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
+)
+
+const (
+	COOKIE_KEY_REDIRECT_URL = "redirect_after_login"
 )
 
 func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
@@ -63,7 +68,18 @@ func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	})
-	w.Write([]byte(clientSideRedirectHTML("/")))
+	fmt.Printf("received cookie: %v\n", len(req.Cookies()))
+	for _, cookie := range req.Cookies() {
+		fmt.Printf("received cookie: %v\t%v\n", cookie.Name, cookie.Value)
+	}
+	cookieRedirectPath, err := req.Cookie(COOKIE_KEY_REDIRECT_URL)
+	if /* cookie redirect url not received */ err != nil {
+		slog.Error(err.Error())
+		w.Write([]byte(clientSideRedirectHTML("/")))
+		return
+	}
+	slog.Info(cookieRedirectPath.Value)
+	w.Write([]byte(clientSideRedirectHTML(cookieRedirectPath.Value)))
 }
 
 func clientSideRedirectHTML(url string) string {
