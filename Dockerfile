@@ -1,4 +1,4 @@
-FROM golang:1.22.6-alpine as dev
+FROM golang:1.23-alpine as dev
 
 ENV ROOT=/go/src/app
 ENV CGO_ENABLED 0
@@ -10,7 +10,7 @@ RUN go mod download
 EXPOSE ${PORT}
 
 
-FROM golang:1.22.6-alpine as builder
+FROM golang:1.23-alpine as builder
 
 ENV ROOT=/go/src/app
 ARG GO_ENTRYPOINT=main.go
