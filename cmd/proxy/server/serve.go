@@ -11,11 +11,9 @@ import (
 )
 
 func Serve(cliOption clioption.CLIOption) error {
-	usingTLS := len(cliOption.X509KeyPairs) != 0
-
 	handler, err := handler.New(cliOption.OAuth2, cliOption.RevProxyConfig,
 		handleroption.WithJWTAuth(cliOption.JWTSignKey),
-		handleroption.WithTLS(usingTLS),
+		handleroption.WithSecureCookie(cliOption.UseSecureCookie),
 		handleroption.WithScope(cliOption.ACL),
 	)
 	if err != nil {
@@ -27,7 +25,7 @@ func Serve(cliOption clioption.CLIOption) error {
 		Handler: handler,
 	}
 
-	if usingTLS {
+	if /* TLS cert/key specified */ len(cliOption.X509KeyPairs) != 0 {
 		server.TLSConfig = &tls.Config{Certificates: cliOption.X509KeyPairs}
 		slog.Info(fmt.Sprintf("Starting HTTPS Server. Listening at %s.", server.Addr))
 		err = server.ListenAndServeTLS("", "")

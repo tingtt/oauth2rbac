@@ -10,12 +10,13 @@ import (
 )
 
 type CLIOption struct {
-	Port           uint16
-	OAuth2         map[string]oauth2.Service
-	JWTSignKey     string
-	RevProxyConfig reverseproxy.Config
-	ACL            acl.Pool
-	X509KeyPairs   []tls.Certificate
+	Port            uint16
+	OAuth2          map[string]oauth2.Service
+	JWTSignKey      string
+	RevProxyConfig  reverseproxy.Config
+	ACL             acl.Pool
+	X509KeyPairs    []tls.Certificate
+	UseSecureCookie bool
 }
 
 func Load() (CLIOption, error) {
@@ -24,6 +25,7 @@ func Load() (CLIOption, error) {
 	oauth2Clients := pflag.StringArray("oauth2-client", nil, "OAuth2 (format: `<ProviderName>;<ClientID>;<ClientSecret>`)")
 	manifestFilePath := pflag.StringP("/etc/oauth2rbac/config.file", "f", "", "Manifest file path")
 	x509KeyPairs := pflag.StringArray("tls-cert", nil, "x509 key pair (format: `<CertFilePath>;<KeyFilePath>`)")
+	useSecureCookie := pflag.Bool("secure-cookie", false, "Use cookies with Secure attribute. If TLS certificate is set, it is always true.")
 	pflag.Parse()
 
 	if err := checkJWTSignKey(*jwtSignKey); err != nil {
@@ -45,12 +47,17 @@ func Load() (CLIOption, error) {
 		return CLIOption{}, err
 	}
 
+	if len(certs) != 0 && !*useSecureCookie {
+		*useSecureCookie = true
+	}
+
 	return CLIOption{
-		Port:           *port,
-		OAuth2:         oauth2Config,
-		JWTSignKey:     *jwtSignKey,
-		RevProxyConfig: revProxyConfig,
-		ACL:            acl,
-		X509KeyPairs:   certs,
+		Port:            *port,
+		OAuth2:          oauth2Config,
+		JWTSignKey:      *jwtSignKey,
+		RevProxyConfig:  revProxyConfig,
+		ACL:             acl,
+		X509KeyPairs:    certs,
+		UseSecureCookie: *useSecureCookie,
 	}, nil
 }

@@ -39,6 +39,6 @@ func WithJWTAuth(jwtSecret string) Applier {
 func WithScope(whitelist acl.Pool) Applier {
 	return func(o *Option) { o.ScopeProvider = acl.NewScopeProvider(whitelist) }
 }
-func WithTLS(usingTLS bool) Applier {
-	return func(o *Option) { o.CookieController = cookieutil.NewController(usingTLS) }
+func WithSecureCookie(useSecure bool) Applier {
+	return func(o *Option) { o.CookieController = cookieutil.NewController(useSecure) }
 }

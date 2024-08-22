@@ -64,7 +64,7 @@ func Test_handler_matchProxy(t *testing.T) {
 			{ExternalURL: "https://example.com/api/", Target: Target{"http://app:3000"}},
 			{ExternalURL: "https://example.com/longbasepath/", Target: Target{"http://longesthost:3000"}},
 		}}
-		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithTLS(false))
+		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithSecureCookie(false))
 
 		tests := []test[wantProxy]{
 			{
@@ -134,7 +134,7 @@ func Test_handler_matchProxy(t *testing.T) {
 			{ExternalURL: "https://example.com/api/", Target: Target{"http://app1:3000/"}},
 			{ExternalURL: "https://example.com/api/with/baseurl/", Target: Target{"http://app2:3000"}},
 		}}
-		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithTLS(false))
+		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithSecureCookie(false))
 
 		tests := []test[wantProxy]{
 			{
@@ -201,7 +201,7 @@ func Test_handler_matchProxy(t *testing.T) {
 				SetHeaders:  map[string][]string{"X-Custom-Header": {"proxied"}},
 			},
 		}}
-		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithTLS(false))
+		option, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithSecureCookie(false))
 
 		tests := []test[wantProxyWithHeader]{
 			{
