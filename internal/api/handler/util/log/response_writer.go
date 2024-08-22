@@ -7,7 +7,7 @@ type CustomResponseWriter struct {
 	StatusCode int
 }
 
-func (rw CustomResponseWriter) WriteHeader(statusCode int) {
+func (rw *CustomResponseWriter) WriteHeader(statusCode int) {
 	rw.StatusCode = statusCode
-	rw.WriteHeader(statusCode)
+	rw.ResponseWriter.WriteHeader(statusCode)
 }
