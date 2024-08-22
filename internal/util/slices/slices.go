@@ -20,11 +20,20 @@ func MapE[T1, T2 any](slice []T1, yield func(T1) (T2, error)) ([]T2, error) {
 	return newSlice, nil
 }
 
-func Some[T1 any](slice []T1, yield func(T1) bool) bool {
+func Some[T any](slice []T, yield func(T) bool) bool {
 	for _, value := range slice {
 		if yield(value) {
 			return true
 		}
 	}
 	return false
+}
+
+func Find[T any](slice []T, yield func(T) bool) *T {
+	for _, value := range slice {
+		if yield(value) {
+			return &value
+		}
+	}
+	return nil
 }

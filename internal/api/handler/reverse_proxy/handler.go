@@ -11,6 +11,7 @@ import (
 	logutil "oauth2rbac/internal/api/handler/util/log"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"oauth2rbac/internal/util/slices"
+	"oauth2rbac/internal/util/tree"
 	"strings"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -22,16 +23,17 @@ type Config struct {
 }
 
 type Proxy struct {
-	ExternalURL *url.URL
-	Target      Host
-	SetHeaders  map[string]string
+	ExternalURL string
+	Target      Target
+	SetHeaders  map[string][]string
 }
 
-type Host struct {
-	URL *url.URL
+type Target struct {
+	URL string
 }
 
 type handler struct {
+	proxyMatchKeys  []string // need sorted in descending order by number of characters
 	proxies         map[string]*httputil.ReverseProxy
 	jwt             *jwtauth.JWTAuth
 	publicEndpoints []acl.Scope
@@ -39,23 +41,45 @@ type handler struct {
 
 func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints []acl.Scope) *handler {
 	proxies := make(map[string]*httputil.ReverseProxy, len(config.Proxies))
-	for _, proxy := range config.Proxies {
-		revProxy := httputil.NewSingleHostReverseProxy(proxy.Target.URL)
-		revProxy.Director = setHeaderDirector(revProxy.Director, proxy.SetHeaders)
-		revProxy.ErrorHandler = handleReverceProxyError
-		proxies[proxy.ExternalURL.Host] = revProxy
+	var rootProxyMatchKeys *tree.Node[string]
+	numberOfCharactersDescendinig := func(new, curr string) (isLeft bool) {
+		return len(new) > len(curr)
 	}
-	return &handler{proxies, jwt, publicEndpoints}
+	for _, proxy := range config.Proxies {
+		targetURL, _ := url.Parse(proxy.Target.URL)    // format already checked in loading manifest
+		externalURL, _ := url.Parse(proxy.ExternalURL) // format already checked in loading manifest
+
+		proxies[proxy.ExternalURL] = newSingleHostReverseProxy(targetURL, externalURL.Path, proxy.SetHeaders)
+		rootProxyMatchKeys = tree.Insert(rootProxyMatchKeys, proxy.ExternalURL, numberOfCharactersDescendinig)
+	}
+	proxyMatchKeys := []string{}
+	tree.InOrderTraversal(rootProxyMatchKeys, &proxyMatchKeys)
+	return &handler{proxyMatchKeys, proxies, jwt, publicEndpoints}
 }
 
-func setHeaderDirector(defaultDirector func(*http.Request), headers map[string]string) func(req *http.Request) {
-	if headers == nil {
-		return defaultDirector
+func newSingleHostReverseProxy(targetURL *url.URL, matchPath string, headers map[string][]string) *httputil.ReverseProxy {
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+	rewriteRequestURL := proxy.Director
+	proxy.Director = func(req *http.Request) {
+		trimBaseURLWithTrailingSlashTarget(req, targetURL.Path, matchPath)
+		rewriteRequestURL(req)
+		setHeaders(req, headers)
 	}
-	return func(req *http.Request) {
-		defaultDirector(req)
-		for key, value := range headers {
-			req.Header.Set(key, value)
+	proxy.ErrorHandler = handleReverceProxyError
+	return proxy
+}
+
+func trimBaseURLWithTrailingSlashTarget(req *http.Request, targetPath, matchPath string) {
+	if /* proxy target path has a trainig slash */ strings.HasSuffix(targetPath, "/") {
+		baseURL := strings.TrimSuffix(matchPath, "/")
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, baseURL)
+	}
+}
+
+func setHeaders(req *http.Request, headers map[string][]string) {
+	for key, value := range headers {
+		for _, vv := range value {
+			req.Header.Set(key, vv)
 		}
 	}
 }
@@ -66,14 +90,24 @@ func handleReverceProxyError(res http.ResponseWriter, inReq *http.Request, err e
 	res.WriteHeader(http.StatusBadGateway)
 }
 
+func (h *handler) matchProxy(reqURL url.URL) (proxy *httputil.ReverseProxy) {
+	key := slices.Find(h.proxyMatchKeys, func(uriPrefix string) bool {
+		return strings.HasPrefix(reqURL.String(), uriPrefix)
+	})
+	if key == nil {
+		return nil
+	}
+	return h.proxies[*key]
+}
+
 func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
 	res := &logutil.CustomResponseWriter{ResponseWriter: rw}
 	logInfo := logutil.InfoLogger(reqURL, req.Method)
 
 	if publicEndpoint(h.publicEndpoints, reqURL) {
-		proxy, exists := h.proxies[reqURL.Host]
-		if !exists {
+		proxy := h.matchProxy(reqURL)
+		if proxy == nil {
 			http.Error(res, "Not Found", http.StatusNotFound)
 			logInfo(res, "proxy target not found")
 			return
@@ -96,8 +130,8 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	proxy, exists := h.proxies[reqURL.Host]
-	if !exists {
+	proxy := h.matchProxy(reqURL)
+	if proxy == nil {
 		http.Error(res, "Not Found", http.StatusNotFound)
 		logInfo(res, "proxy target not found")
 		return
