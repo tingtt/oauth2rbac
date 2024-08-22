@@ -35,7 +35,7 @@ func Load() (CLIOption, error) {
 		return CLIOption{}, err
 	}
 
-	revProxyConfig, acl, err := RevProxyACL(*manifestFilePath)
+	revProxyConfig, acl, err := loadAndValidateManifest(*manifestFilePath)
 	if err != nil {
 		return CLIOption{}, err
 	}

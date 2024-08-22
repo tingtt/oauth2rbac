@@ -22,7 +22,7 @@ type proxy struct {
 	SetHeaders  map[string][]string `yaml:"set_headers"`
 }
 
-func RevProxyACL(yamlFilePath string) (reverseproxy.Config, acl.Pool, error) {
+func loadAndValidateManifest(yamlFilePath string) (reverseproxy.Config, acl.Pool, error) {
 	manifest, err := loadRevProxyACLManifest(yamlFilePath)
 	if err != nil {
 		return reverseproxy.Config{}, nil, fmt.Errorf("failed to load manifest: %w", err)
