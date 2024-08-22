@@ -6,12 +6,10 @@ import (
 	"net/http"
 	"net/url"
 	"oauth2rbac/internal/acl"
-	"oauth2rbac/internal/api/handler/oauth2"
 	logutil "oauth2rbac/internal/api/handler/util/log"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"oauth2rbac/internal/util/slices"
 	"strings"
-	"time"
 
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -37,16 +35,7 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	allowed, err := checkScope(h.jwt.Decode, req, reqURL)
 	if /*  */ err != nil {
 		redurectURL := loginURLWithRedirectURL(reqURL.String())
-		http.SetCookie(res, &http.Cookie{
-			Name:     oauth2.COOKIE_KEY_REDIRECT_URL,
-			Value:    reqURL.String(),
-			Path:     "/",
-			Domain:   "",
-			MaxAge:   int(time.Hour / time.Second),
-			Secure:   false,
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode, // use Lax mode (https://issues.chromium.org/issues/40508226)
-		})
+		h.cookieController.SetRedirectURLForAfterLogin(res, reqURL.String())
 		http.Redirect(res, req, redurectURL, http.StatusFound)
 		logInfo(res, redurectURL, "(request login)")
 		return

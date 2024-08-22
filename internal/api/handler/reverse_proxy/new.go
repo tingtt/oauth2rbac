@@ -6,7 +6,10 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"oauth2rbac/internal/acl"
+	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
+	handleroption "oauth2rbac/internal/api/handler/util/option"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
+	"oauth2rbac/internal/util/options"
 	"oauth2rbac/internal/util/tree"
 	"strings"
 
@@ -14,13 +17,16 @@ import (
 )
 
 type handler struct {
-	proxyMatchKeys  []string // need sorted in descending order by number of characters
-	proxies         map[string]*httputil.ReverseProxy
-	jwt             *jwtauth.JWTAuth
-	publicEndpoints []acl.Scope
+	proxyMatchKeys   []string // need sorted in descending order by number of characters
+	proxies          map[string]*httputil.ReverseProxy
+	jwt              *jwtauth.JWTAuth
+	publicEndpoints  []acl.Scope
+	cookieController cookieutil.Controller
 }
 
-func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints []acl.Scope) *handler {
+func NewReverseProxyHandler(config Config, jwtAuth *jwtauth.JWTAuth, publicEndpoints []acl.Scope, _options ...handleroption.Applier) *handler {
+	option := options.Create(_options...)
+
 	proxies := make(map[string]*httputil.ReverseProxy, len(config.Proxies))
 	var rootProxyMatchKeys *tree.Node[string]
 	numberOfCharactersDescendinig := func(new, curr string) (isLeft bool) {
@@ -35,7 +41,13 @@ func NewReverseProxyHandler(config Config, jwt *jwtauth.JWTAuth, publicEndpoints
 	}
 	proxyMatchKeys := []string{}
 	tree.InOrderTraversal(rootProxyMatchKeys, &proxyMatchKeys)
-	return &handler{proxyMatchKeys, proxies, jwt, publicEndpoints}
+	return &handler{
+		proxyMatchKeys,
+		proxies,
+		jwtAuth,
+		publicEndpoints,
+		cookieutil.NewController(option.UsingTLS),
+	}
 }
 
 func newSingleHostReverseProxy(targetURL *url.URL, matchPath string, headers map[string][]string) *httputil.ReverseProxy {

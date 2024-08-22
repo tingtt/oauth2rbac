@@ -1,4 +1,4 @@
-package oauth2
+package oauth2handler
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/go-xmlfmt/xmlfmt"
 )
 
-func (h *Handler) SelectProvider(w http.ResponseWriter, r *http.Request) {
+func (h *handler) SelectProvider(w http.ResponseWriter, r *http.Request) {
 	htmlFormat := `<!DOCTYPE html><html><body>%s</body></html>`
 	body := ""
 	for providerName := range oauth2.Providers {

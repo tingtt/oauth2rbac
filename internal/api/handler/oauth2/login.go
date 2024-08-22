@@ -1,4 +1,4 @@
-package oauth2
+package oauth2handler
 
 import (
 	"net/http"
@@ -7,9 +7,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (h *Handler) Login(w http.ResponseWriter, req *http.Request) {
+func (h *handler) Login(w http.ResponseWriter, req *http.Request) {
 	providerName := chi.URLParam(req, "oauthProvider")
-	oauth2, supported := h.OAuth2[providerName]
+	oauth2, supported := h.oAuth2[providerName]
 	if !supported {
 		http.Redirect(w, req, "/.auth/login", http.StatusTemporaryRedirect)
 		return

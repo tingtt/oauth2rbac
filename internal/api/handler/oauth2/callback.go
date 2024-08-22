@@ -1,10 +1,11 @@
-package oauth2
+package oauth2handler
 
 import (
 	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
+	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"time"
 
@@ -12,15 +13,11 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 )
 
-const (
-	COOKIE_KEY_REDIRECT_URL = "redirect_after_login"
-)
-
-func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
+func (h *handler) Callback(w http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
 	providerName := chi.URLParam(req, "oauthProvider")
 
-	oauth2, supported := h.OAuth2[providerName]
+	oauth2, supported := h.oAuth2[providerName]
 	if !supported {
 		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
 		return
@@ -41,7 +38,7 @@ func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
 		return
 	}
-	scopes := h.Scope.Get(emails)
+	scopes := h.scope.Get(emails)
 	if len(scopes) == 0 {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Forbidden"))
@@ -53,26 +50,18 @@ func (h *Handler) Callback(w http.ResponseWriter, req *http.Request) {
 	}
 	jwtauth.SetIssuedNow(claim)
 	jwtauth.SetExpiryIn(claim, time.Hour)
-	_, tokenStr, err := h.JWT.Encode(claim)
+	_, tokenStr, err := h.JWTAuth.Encode(claim)
 	if err != nil {
+		slog.Error(fmt.Errorf("failed to encode jwt token: %w", err).Error())
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
-		Value:    tokenStr,
-		Path:     "/",
-		Domain:   "",
-		MaxAge:   int(time.Hour / time.Second),
-		Secure:   false,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	h.cookieController.SetJWT(w, tokenStr)
 	fmt.Printf("received cookie: %v\n", len(req.Cookies()))
 	for _, cookie := range req.Cookies() {
 		fmt.Printf("received cookie: %v\t%v\n", cookie.Name, cookie.Value)
 	}
-	cookieRedirectPath, err := req.Cookie(COOKIE_KEY_REDIRECT_URL)
+	cookieRedirectPath, err := req.Cookie(cookieutil.COOKIE_KEY_REDIRECT_URL_FOR_AFTER_LOGIN)
 	if /* cookie redirect url not received */ err != nil {
 		slog.Error(err.Error())
 		w.Write([]byte(clientSideRedirectHTML("/")))

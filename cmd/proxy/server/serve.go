@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"oauth2rbac/cmd/proxy/clioption"
 	"oauth2rbac/internal/api/handler"
+	handleroption "oauth2rbac/internal/api/handler/util/option"
 )
 
 func Serve(cliOption clioption.CLIOption) error {
+	usingTLS := len(cliOption.X509KeyPairs) != 0
+
 	server := &http.Server{
 		Addr: fmt.Sprintf(":%d", cliOption.Port),
 		Handler: handler.New(
@@ -17,16 +20,14 @@ func Serve(cliOption clioption.CLIOption) error {
 			cliOption.JWTSignKey,
 			cliOption.RevProxyConfig,
 			cliOption.ACL,
+			handleroption.WithTLS(usingTLS),
 		),
-	}
-
-	if /* TLS cert/key specified */ len(cliOption.X509KeyPairs) != 0 {
-		server.TLSConfig = &tls.Config{Certificates: cliOption.X509KeyPairs}
 	}
 
 	slog.Info(fmt.Sprintf("Starting HTTP Server. Listening at %s.", server.Addr))
 	var err error
-	if /* TLS cert/key specified */ len(cliOption.X509KeyPairs) != 0 {
+	if usingTLS {
+		server.TLSConfig = &tls.Config{Certificates: cliOption.X509KeyPairs}
 		err = server.ListenAndServeTLS("", "")
 	} else {
 		err = server.ListenAndServe()
