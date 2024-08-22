@@ -1,6 +1,6 @@
 # oauth2rbac
 
-It's a reverse proxy that performs RBAC (Role Based Access Control) with SSO using OAuth2.
+It's a reverse proxy that performs RBAC (Role Based Access Control) with SSO using OAuth2.  
 It provides access control with email addresses tied to Gmail and GitHub accounts.
 
 ## Usage
