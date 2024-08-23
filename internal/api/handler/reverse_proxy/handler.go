@@ -17,18 +17,17 @@ import (
 
 func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
-	res := &logutil.CustomResponseWriter{ResponseWriter: rw}
-	logInfo := logutil.InfoLogger(reqURL, req.Method)
+	res, logInfo := logutil.InfoLogger(reqURL, req.Method, rw, req)
 
 	if publicEndpoint(h.publicEndpoints, reqURL) {
 		proxy := h.matchProxy(reqURL)
 		if proxy == nil {
 			http.Error(res, "Not Found", http.StatusNotFound)
-			logInfo(res, "proxy target not found")
+			logInfo("proxy target not found")
 			return
 		}
 		proxy.ServeHTTP(res, req)
-		logInfo(res)
+		logInfo("proxy successful (public)")
 		return
 	}
 
@@ -37,23 +36,23 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		redurectURL := loginURLWithRedirectURL(reqURL.String())
 		h.cookieController.SetRedirectURLForAfterLogin(res, reqURL.String())
 		http.Redirect(res, req, redurectURL, http.StatusFound)
-		logInfo(res, redurectURL, "(request login)")
+		logInfo("request login")
 		return
 	}
 	if !allowed {
 		http.Error(res, "Forbidden", http.StatusForbidden)
-		logInfo(res, "no access to scope")
+		logInfo("no access to the scope")
 		return
 	}
 
 	proxy := h.matchProxy(reqURL)
 	if proxy == nil {
 		http.Error(res, "Not Found", http.StatusNotFound)
-		logInfo(res, "proxy target not found")
+		logInfo("proxy target not found")
 		return
 	}
 	proxy.ServeHTTP(res, req)
-	logInfo(res)
+	logInfo("proxy successful (authorized)")
 }
 
 func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL) bool {

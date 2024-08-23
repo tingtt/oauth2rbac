@@ -52,6 +52,14 @@ func WithXForwardedHeaders(header http.Header) optionApplier {
 	}
 }
 
+func InspectXForwardedFor(header http.Header) string {
+	xForwardedFor := header.Get("X-Forwarded-For")
+	if xForwardedFor == "" {
+		return "-"
+	}
+	return xForwardedFor
+}
+
 func RequestURL(reqURL url.URL, options ...optionApplier) url.URL {
 	option := option{}
 	for _, apply := range options {

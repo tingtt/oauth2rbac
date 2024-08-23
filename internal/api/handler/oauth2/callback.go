@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
+	logutil "oauth2rbac/internal/api/handler/util/log"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"time"
 
@@ -13,62 +14,71 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 )
 
-func (h *handler) Callback(w http.ResponseWriter, req *http.Request) {
-	ctx := context.Background()
+func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 	providerName := chi.URLParam(req, "oauthProvider")
+
+	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
+	res, logInfo := logutil.InfoLogger(reqURL, req.Method, rw, req)
 
 	oauth2, supported := h.oauth2[providerName]
 	if !supported {
-		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
+		http.Redirect(res, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
+		logInfo("unsupported oauth2 provider")
 		return
 	}
 
-	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
 	redirectURL := reqURL.Scheme + "://" + reqURL.Host + "/.auth/" + providerName + "/callback"
 
+	ctx := context.Background()
 	oauth2Token, err := oauth2.Exchange(ctx, req.FormValue("code"), redirectURL)
 	if err != nil {
-		fmt.Printf("failed to exchange code to token (provider: %s): %v\n", providerName, err)
-		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
+		slog.Error("failed to exchange code to token", slog.String("provider", providerName), slog.String("error", err.Error()))
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(clientSideRedirectConfirmErrorHTML(
+			/* request redirect to */ fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery),
+			/* cause */ "failed to exchange code to token",
+		)))
+		logInfo("failed to exchange code to token", slog.String("provider", providerName), slog.String("error", err.Error()))
 		return
 	}
 	emails, err := oauth2.GetEmail(ctx, oauth2Token)
 	if err != nil {
-		fmt.Printf("failed to get email (%s): %v\n", providerName, err)
-		http.Redirect(w, req, fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery), http.StatusTemporaryRedirect)
-		return
-	}
-	scopes := h.scope.Get(emails)
-	if len(scopes) == 0 {
-		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("Forbidden"))
+		slog.Error("failed to get email", slog.String("provider", providerName), slog.String("error", err.Error()))
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(clientSideRedirectConfirmErrorHTML(
+			/* request redirect to */ fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery),
+			/* cause */ "failed to get email",
+		)))
+		logInfo("failed to get email", slog.String("provider", providerName), slog.String("error", err.Error()))
 		return
 	}
 
 	claim := map[string]interface{}{
-		"scopes_whitelist": scopes,
+		"scopes_whitelist": h.scope.Get(emails),
 	}
 	jwtauth.SetIssuedNow(claim)
 	jwtauth.SetExpiryIn(claim, time.Hour)
 	_, tokenStr, err := h.JWTAuth.Encode(claim)
 	if err != nil {
 		slog.Error(fmt.Errorf("failed to encode jwt token: %w", err).Error())
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(clientSideRedirectConfirmErrorHTML(
+			/* request redirect to */ fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery),
+			/* cause */ "failed to encode jwt token",
+		)))
+		logInfo("failed to encode jwt token")
 		return
 	}
 
-	h.cookieController.SetJWT(w, tokenStr)
-	fmt.Printf("received cookie: %v\n", len(req.Cookies()))
-	for _, cookie := range req.Cookies() {
-		fmt.Printf("received cookie: %v\t%v\n", cookie.Name, cookie.Value)
-	}
+	h.cookieController.SetJWT(res, tokenStr)
 	cookieRedirectPath, err := req.Cookie(cookieutil.COOKIE_KEY_REDIRECT_URL_FOR_AFTER_LOGIN)
 	if /* cookie redirect url not received */ err != nil {
-		slog.Error(err.Error())
-		w.Write([]byte(clientSideRedirectHTML("/")))
+		res.Write([]byte(clientSideRedirectHTML("/")))
+		logInfo("signed-in", slog.Bool("cookie_redirect_url_found", false))
 		return
 	}
-	slog.Info(cookieRedirectPath.Value)
-	w.Write([]byte(clientSideRedirectHTML(cookieRedirectPath.Value)))
+	res.Write([]byte(clientSideRedirectHTML(cookieRedirectPath.Value)))
+	logInfo("signed-in", slog.Bool("cookie_redirect_url_found", true))
 }
 
 func clientSideRedirectHTML(url string) string {
@@ -88,4 +98,21 @@ func clientSideRedirectHTML(url string) string {
 </body>
 </html>
 `, url, url, url)
+}
+
+func clientSideRedirectConfirmErrorHTML(url string, cause string) string {
+	return fmt.Sprintf(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error occured</title>
+</head>
+<body>
+		<font color="red">%s</font>
+		<br />
+    <p><a href="%s">login</a>.</p>
+</body>
+</html>
+`, cause, url)
 }
