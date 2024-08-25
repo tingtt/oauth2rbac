@@ -27,7 +27,7 @@ func Load() (CLIOption, error) {
 	port := pflag.Uint16("port", 8080, "Port to listen")
 	jwtSignKey := pflag.String("jwt-secret", "", "JWT sign secret")
 	oauth2Clients := pflag.StringArray("oauth2-client", nil, "OAuth2 (format: `<ProviderName>;<ClientID>;<ClientSecret>`)")
-	manifestFilePath := pflag.StringP("/etc/oauth2rbac/config.file", "f", "", "Manifest file path")
+	manifestFilePath := pflag.StringP("config.file", "f", "/etc/oauth2rbac/config.file", "Manifest file path")
 	x509KeyPairs := pflag.StringArray("tls-cert", nil, "x509 key pair (format: `<CertFilePath>;<KeyFilePath>`)")
 	useSecureCookie := pflag.Bool("secure-cookie", false, "Use cookies with Secure attribute. If TLS certificate is set, it is always true.")
 
