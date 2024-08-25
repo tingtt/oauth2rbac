@@ -18,8 +18,6 @@ type CLIOption struct {
 	ACL             acl.Pool
 	X509KeyPairs    []tls.Certificate
 	UseSecureCookie bool
-
-	LogLevel slog.Level
 }
 
 func Load() (CLIOption, error) {
