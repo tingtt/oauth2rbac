@@ -5,9 +5,9 @@ import (
 	"oauth2rbac/internal/acl"
 	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
 	"oauth2rbac/internal/api/middleware/jwt"
-	"oauth2rbac/internal/util/options"
 
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/tingtt/options"
 )
 
 func New(_options ...Applier) (*Option, error) {
