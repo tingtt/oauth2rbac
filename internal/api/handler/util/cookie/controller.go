@@ -17,7 +17,7 @@ type Controller interface {
 }
 
 func NewController(secure bool) Controller {
-	return &controller{}
+	return &controller{secure}
 }
 
 type controller struct {
