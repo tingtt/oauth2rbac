@@ -33,9 +33,20 @@ OAUTH2_GOOGLE="<your-client-id>;<your-client-secret>"
 
 ## Run
 
+### Develop stage
+
 ```sh
 cd test/e2e/
 docker compose up -d
 ```
 
+### Production stage
+
+```sh
+make build-docker
+cd test/e2e/
+docker compose -f compose.prod.yml up
+```
+
+http://localhost:8080
 http://127.0.0.1:8080

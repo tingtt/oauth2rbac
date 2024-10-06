@@ -1,0 +1,28 @@
+services:
+  oauth2rbac:
+    image: oauth2rbac
+    volumes:
+      - type: bind
+        source: config.yml
+        target: /etc/oauth2rbac/config.yml
+    ports:
+      - "${PORT}:8080"
+    command:
+      [
+        "--port",
+        "8080",
+        "--jwt-secret",
+        "${JWT_SECRET}",
+        "-f",
+        "/etc/oauth2rbac/config.yml",
+        "--oauth2-client",
+        "github;${OAUTH2_GITHUB}",
+        "--oauth2-client",
+        "google;${OAUTH2_GOOGLE}",
+      ]
+    tty: true
+
+  target:
+    image: nginx:latest
+    ports:
+      - 80
