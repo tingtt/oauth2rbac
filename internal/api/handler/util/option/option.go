@@ -2,7 +2,6 @@ package handleroption
 
 import (
 	"errors"
-	"log/slog"
 	"oauth2rbac/internal/acl"
 	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
 	"oauth2rbac/internal/api/middleware/jwt"
@@ -41,8 +40,5 @@ func WithScope(whitelist acl.Pool) Applier {
 	return func(o *Option) { o.ScopeProvider = acl.NewScopeProvider(whitelist) }
 }
 func WithSecureCookie(useSecure bool) Applier {
-	if !useSecure {
-		slog.Warn("No x509 key pair, it will use Cookie with `secure=false;`.")
-	}
 	return func(o *Option) { o.CookieController = cookieutil.NewController(useSecure) }
 }
