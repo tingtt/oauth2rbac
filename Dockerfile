@@ -34,5 +34,4 @@ COPY --from=certs /etc/ssl/certs /etc/ssl/certs
 COPY --from=builder ${ROOT}/binary .
 
 EXPOSE ${PORT}
-USER nobody
 ENTRYPOINT ["/go/src/app/binary"]
