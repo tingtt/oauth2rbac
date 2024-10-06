@@ -26,7 +26,7 @@ func Serve(cliOption clioption.CLIOption) error {
 	}
 
 	if /* TLS cert/key specified */ len(cliOption.X509KeyPairs) != 0 {
-		server.TLSConfig = &tls.Config{Certificates: cliOption.X509KeyPairs}
+		server.TLSConfig = &tls.Config{Certificates: cliOption.X509KeyPairs, MinVersion: tls.VersionTLS13}
 		slog.Info(fmt.Sprintf("Starting HTTPS Server. Listening at %s.", server.Addr))
 		err = server.ListenAndServeTLS("", "")
 	} else {
