@@ -13,7 +13,7 @@ import (
 func Serve(cliOption clioption.CLIOption) error {
 	handler, err := handler.New(cliOption.OAuth2, cliOption.RevProxyConfig,
 		handleroption.WithJWTAuth(cliOption.JWTSignKey),
-		handleroption.WithSecureCookie(cliOption.UseSecureCookie),
+		handleroption.WithSecureCookie(len(cliOption.X509KeyPairs) != 0),
 		handleroption.WithScope(cliOption.ACL),
 	)
 	if err != nil {
