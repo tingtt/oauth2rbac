@@ -33,9 +33,9 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	allowed, err := checkScope(h.jwt.Decode, req, reqURL)
 	if /* unauthorized */ err != nil {
-		redurectURL := loginURLWithRedirectURL(reqURL.String())
+		redirectURL := loginURLWithRedirectURL(reqURL.String())
 		h.cookieController.SetRedirectURLForAfterLogin(res, reqURL.String())
-		http.Redirect(res, req, redurectURL, http.StatusFound)
+		http.Redirect(res, req, redirectURL, http.StatusFound)
 		logInfo("request login")
 		return
 	}
