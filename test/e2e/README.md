@@ -19,7 +19,8 @@ proxies:
 
 acl:
   "<your-email-addr>":
-    - "http://127.0.0.1:8080/"
+    - external_url: "http://127.0.0.1:8080/"
+      methods: ["GET"]
 ```
 
 ## Create `test/e2e/.env`

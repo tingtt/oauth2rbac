@@ -50,14 +50,20 @@ proxies:
 
 acl:
   "-": #! public
-    - "https://example.com/"
-    - "https://www.example.com/"
+    - external_url: "https://example.com/"
+      methods: ["GET"]
+    - external_url: "https://www.example.com/"
+      methods: ["GET"]
   "*@example.com":
-    - "https://internal.example.com/"
+    - external_url: "https://internal.example.com/"
+      methods: ["*"]
   "<your email>":
-    - "https://grafana.example.com/"
-    - "https://prometheus.example.com/"
-    - "https://gallery.example.com/"
+    - external_url: "https://grafana.example.com/"
+      methods: ["*"]
+    - external_url: "https://prometheus.example.com/"
+      methods: ["*"]
+    - external_url: "https://gallery.example.com/"
+      methods: ["*"]
 ```
 
 ## 3. Create `compose.yaml`

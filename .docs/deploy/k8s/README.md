@@ -66,16 +66,24 @@ data:
 
     acl:
       "-": #! public
-        - "https://example.com/"
-        - "https://www.example.com/"
-        - "https://argocd.example.com/healthz"
-        - "https://grafana.example.com/api/health"
+        - external_url: "https://example.com/"
+          methods: ["GET"]
+        - external_url: "https://www.example.com/"
+          methods: ["GET"]
+        - external_url: "https://argocd.example.com/healthz"
+          methods: ["GET"]
+        - external_url: "https://grafana.example.com/api/health"
+          methods: ["GET"]
       "*@example.com":
-        - "https://internal.example.com/"
+        - external_url: "https://internal.example.com/"
+          methods: ["*"]
       "<your email>":
-        - "https://argocd.example.com/"
-        - "https://grafana.example.com/"
-        - "https://prometheus.example.com/"
+        - external_url: "https://argocd.example.com/"
+          methods: ["*"]
+        - external_url: "https://grafana.example.com/"
+          methods: ["*"]
+        - external_url: "https://prometheus.example.com/"
+          methods: ["*"]
 ```
 
 ### 3. `oauth2rbac.yaml` (Deployment / Service)

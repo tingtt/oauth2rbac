@@ -3,6 +3,7 @@ package reverseproxy
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"oauth2rbac/internal/acl"
@@ -19,7 +20,7 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
 	res, logInfo := logutil.InfoLogger(reqURL, req.Method, rw, req)
 
-	if publicEndpoint(h.publicEndpoints, reqURL) {
+	if publicEndpoint(h.publicEndpoints, reqURL, req.Method) {
 		proxy := h.matchProxy(reqURL)
 		if proxy == nil {
 			http.Error(res, "Not Found", http.StatusNotFound)
@@ -31,12 +32,17 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	allowed, err := checkScope(h.jwt.Decode, req, reqURL)
+	allowed, err := checkScope(h.jwt.Decode, req, reqURL, req.Method)
+	if /* unexpected error */ errors.Is(err, errInternal) {
+		http.Error(res, "System Error. Please contact administrator.", http.StatusInternalServerError)
+		logInfo("internal error", slog.String("err", err.Error()))
+		return
+	}
 	if /* unauthorized */ err != nil {
 		redirectURL := loginURLWithRedirectURL(reqURL.String())
 		h.cookieController.SetRedirectURLForAfterLogin(res, reqURL.String())
 		http.Redirect(res, req, redirectURL, http.StatusFound)
-		logInfo("request login")
+		logInfo("request login", slog.String("err", err.Error()))
 		return
 	}
 	if !allowed {
@@ -55,23 +61,33 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	logInfo("proxy successful (authorized)")
 }
 
-func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL) bool {
+func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL, reqMethod string) bool {
 	return slices.Some(publicEndpoints, func(scope acl.Scope) bool {
-		return strings.HasPrefix(reqURL.String(), string(scope))
+		return strings.HasPrefix(reqURL.String(), scope.ExternalURL) &&
+			slices.Some(scope.Methods, func(method string) bool {
+				return method == reqMethod || method == "*"
+			})
 	})
 }
 
-func checkScope(jwtDecode func(string) (jwt.Token, error), req *http.Request, reqURL url.URL) (allowed bool, _ error) {
+var (
+	errInternal = errors.New("internal error")
+)
+
+func checkScope(jwtDecode func(string) (jwt.Token, error), req *http.Request, reqURL url.URL, reqMethod string) (allowed bool, _ error) {
 	token, err := jwtDecode(jwtauth.TokenFromCookie(req))
 	if err != nil {
 		return false, err
 	}
 	allowlist, err := inspectallowlistClaim(token.PrivateClaims())
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("%w: %w", errInternal, err)
 	}
-	allowed = slices.Some(allowlist, func(scope string) bool {
-		return strings.HasPrefix(reqURL.String(), scope)
+	allowed = slices.Some(allowlist, func(scope acl.Scope) bool {
+		return strings.HasPrefix(reqURL.String(), scope.ExternalURL) &&
+			slices.Some(scope.Methods, func(method string) bool {
+				return method == reqMethod || method == "*"
+			})
 	})
 	return allowed, nil
 }
@@ -83,7 +99,7 @@ func loginURLWithRedirectURL(redirectURL string) string {
 	)
 }
 
-func inspectallowlistClaim(claims map[string]interface{}) ([]string, error) {
+func inspectallowlistClaim(claims map[string]interface{}) ([]acl.Scope, error) {
 	allowlistClaim, exist := claims["scopes_allowlist"]
 	if !exist {
 		return nil, errors.New("claim not found: scopes_allowlist")
@@ -92,7 +108,29 @@ func inspectallowlistClaim(claims map[string]interface{}) ([]string, error) {
 	if !ok {
 		return nil, errors.New("invalid format claims: scopes_allowlist")
 	}
-	return slices.Map(allowlist, func(item interface{}) string {
-		return fmt.Sprint(item)
-	}), nil
+	return slices.MapE(allowlist, func(item interface{}) (acl.Scope, error) {
+		scopeMap, ok := item.(map[string]interface{})
+		if !ok {
+			return acl.Scope{}, errors.New("invalid format claims: scopes_allowlist[i]")
+		}
+		externalURL, ok := scopeMap["ExternalURL"].(string)
+		if !ok {
+			return acl.Scope{}, errors.New("invalid format claims: scopes_allowlist[i].ExternalURL")
+		}
+		methodsI, ok := scopeMap["Methods"].([]interface{})
+		if !ok {
+			return acl.Scope{}, errors.New("invalid format claims: scopes_allowlist[i].Methods")
+		}
+		methods, err := slices.MapE(methodsI, func(methodI interface{}) (string, error) {
+			method, ok := methodI.(string)
+			if !ok {
+				return "", errors.New("invalid format claims: scopes_allowlist[i].Methods[i]")
+			}
+			return method, nil
+		})
+		if err != nil {
+			return acl.Scope{}, err
+		}
+		return acl.Scope{ExternalURL: externalURL, Methods: methods}, nil
+	})
 }

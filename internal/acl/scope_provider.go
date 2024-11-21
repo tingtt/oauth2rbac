@@ -3,7 +3,6 @@ package acl
 import (
 	"fmt"
 	"log/slog"
-	"oauth2rbac/internal/util/slices"
 	"regexp"
 	"strings"
 )
@@ -66,7 +65,6 @@ func (p scopeProvider) Get(emails []Email) []Scope {
 	for _, email := range emails {
 		scopes = append(scopes, p.get(email)...)
 	}
-	scopes = slices.Compact(scopes)
 	p.cache[cacheKey] = scopes
 	return scopes
 }
