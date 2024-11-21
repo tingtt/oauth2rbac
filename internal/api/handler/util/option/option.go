@@ -37,8 +37,8 @@ type Applier = options.Applier[Option]
 func WithJWTAuth(jwtSecret string) Applier {
 	return func(o *Option) { o.JWTAuth = jwt.NewAuth(jwtSecret) }
 }
-func WithScope(whitelist acl.Pool) Applier {
-	return func(o *Option) { o.ScopeProvider = acl.NewScopeProvider(whitelist) }
+func WithScope(allowlist acl.Pool) Applier {
+	return func(o *Option) { o.ScopeProvider = acl.NewScopeProvider(allowlist) }
 }
 func WithSecureCookie(useSecure bool) Applier {
 	if !useSecure {

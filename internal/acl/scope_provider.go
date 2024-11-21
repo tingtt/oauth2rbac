@@ -13,11 +13,11 @@ type ScopeProvider interface {
 	Get(emails []Email) []Scope
 }
 type matcher interface {
-	match(email Email, whitelist Pool) []Scope
+	match(email Email, allowlist Pool) []Scope
 }
 
-func NewScopeProvider(whitelist Pool) ScopeProvider {
-	p := &scopeProvider{scopeMatcher{}, make(map[string][]Scope), whitelist}
+func NewScopeProvider(allowlist Pool) ScopeProvider {
+	p := &scopeProvider{scopeMatcher{}, make(map[string][]Scope), allowlist}
 	go p.initializeCache()
 	return p
 }
@@ -25,15 +25,15 @@ func NewScopeProvider(whitelist Pool) ScopeProvider {
 type scopeProvider struct {
 	matcher   matcher
 	cache     map[string][]Scope
-	whitelist Pool
+	allowlist Pool
 }
 
 func (p *scopeProvider) PublicEndpoints() []Scope {
-	return p.whitelist["-"]
+	return p.allowlist["-"]
 }
 
 func (p scopeProvider) initializeCache() {
-	for email, scopes := range p.whitelist {
+	for email, scopes := range p.allowlist {
 		if strings.Contains(string(email), "*") {
 			continue
 		}
@@ -49,7 +49,7 @@ func (p scopeProvider) get(email Email) []Scope {
 	}
 	slog.Debug(fmt.Sprintf("acl: scope cache not exists (%s)", email))
 
-	scopes := p.matcher.match(email, p.whitelist)
+	scopes := p.matcher.match(email, p.allowlist)
 	p.cache[string(email)] = scopes
 	return scopes
 }
@@ -73,9 +73,9 @@ func (p scopeProvider) Get(emails []Email) []Scope {
 
 type scopeMatcher struct{}
 
-func (p scopeMatcher) match(email Email, whitelist Pool) []Scope {
+func (p scopeMatcher) match(email Email, allowlist Pool) []Scope {
 	scopes := []Scope{}
-	for allowedEmail, _scopes := range whitelist {
+	for allowedEmail, _scopes := range allowlist {
 		// Convert the email pattern to a regex pattern
 		regexPattern := fmt.Sprintf("^%s$", allowedEmail)
 		regexPattern = regexp.MustCompile(`\.`).ReplaceAllString(regexPattern, `\.`)

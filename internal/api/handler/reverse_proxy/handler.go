@@ -66,11 +66,11 @@ func checkScope(jwtDecode func(string) (jwt.Token, error), req *http.Request, re
 	if err != nil {
 		return false, err
 	}
-	whitelist, err := inspectWhitelistClaim(token.PrivateClaims())
+	allowlist, err := inspectallowlistClaim(token.PrivateClaims())
 	if err != nil {
 		return false, err
 	}
-	allowed = slices.Some(whitelist, func(scope string) bool {
+	allowed = slices.Some(allowlist, func(scope string) bool {
 		return strings.HasPrefix(reqURL.String(), scope)
 	})
 	return allowed, nil
@@ -83,16 +83,16 @@ func loginURLWithRedirectURL(redirectURL string) string {
 	)
 }
 
-func inspectWhitelistClaim(claims map[string]interface{}) ([]string, error) {
-	whitelistClaim, exist := claims["scopes_whitelist"]
+func inspectallowlistClaim(claims map[string]interface{}) ([]string, error) {
+	allowlistClaim, exist := claims["scopes_allowlist"]
 	if !exist {
-		return nil, errors.New("claim not found: scopes_whitelist")
+		return nil, errors.New("claim not found: scopes_allowlist")
 	}
-	whitelist, ok := whitelistClaim.([]interface{})
+	allowlist, ok := allowlistClaim.([]interface{})
 	if !ok {
-		return nil, errors.New("invalid format claims: scopes_whitelist")
+		return nil, errors.New("invalid format claims: scopes_allowlist")
 	}
-	return slices.Map(whitelist, func(item interface{}) string {
+	return slices.Map(allowlist, func(item interface{}) string {
 		return fmt.Sprint(item)
 	}), nil
 }

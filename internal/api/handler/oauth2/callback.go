@@ -54,7 +54,7 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	claim := map[string]interface{}{
-		"scopes_whitelist": h.scope.Get(emails),
+		"scopes_allowlist": h.scope.Get(emails),
 	}
 	jwtauth.SetIssuedNow(claim)
 	jwtauth.SetExpiryIn(claim, time.Hour)
