@@ -37,7 +37,7 @@ func (p scopeProvider) initializeCache() {
 		if strings.Contains(string(email), "*") {
 			continue
 		}
-		p.cache[string(email)] = scopes
+		p.cache[string(email)] = append(scopes, p.matcher.match(email, p.allowlist)...)
 	}
 	slog.Info("acl: scope loaded")
 }
