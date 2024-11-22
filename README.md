@@ -13,7 +13,6 @@ Refer to the documentation in [Docker Compose Deployment](.docs/deploy/docker/RE
 
 Refer to the documentation in [Kubernetes Deployment](.docs/deploy/k8s/README.md) for instructions on how to deploy on Kubernetes.
 
-
 ## Configuration
 
 The reverse proxy is configured using a YAML file.

@@ -68,12 +68,12 @@ acl:
 
 ## 3. Create `compose.yaml`
 
-Create a `compose.yaml` file to define the services.
+Create a `compose.yaml` file to define services.
 
 ```yaml
 services:
   oauth2rbac:
-    image: tingtt/oauth2rbac:v0.5.0
+    image: tingtt/oauth2rbac:v0.6.0
     command: [
       "--port", "80",
       "--jwt-secret", "$(JWT_SECRET)",
@@ -130,7 +130,7 @@ Modify the `compose.yaml` to enable built-in TLS termination:
 ```diff
 services:
   oauth2rbac:
-    image: tingtt/oauth2rbac:v0.5.0
+    image: tingtt/oauth2rbac:v0.6.0
     command: [
 -     "--port", "80",
 +     "--port", "443",
