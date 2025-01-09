@@ -12,6 +12,7 @@ type Provider struct {
 	Endpoint     oauth2.Endpoint
 	Scopes       []string
 	GetEmailFunc func(ctx context.Context, config Config, token *oauth2.Token) (emails []string, err error)
+	DisplayName  string
 }
 
 var Providers = map[string]Provider{
@@ -19,10 +20,20 @@ var Providers = map[string]Provider{
 		Endpoint:     google.Endpoint,
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 		GetEmailFunc: google.GetEmailFunc,
+		DisplayName:  "Google",
 	},
 	"github": {
 		Endpoint:     github.Endpoint,
 		Scopes:       []string{"user:email"},
 		GetEmailFunc: github.GetEmailFunc,
+		DisplayName:  "GitHub",
 	},
+}
+
+func ProviderNames() []string {
+	providerNames := make([]string, 0, len(Providers))
+	for providerName := range Providers {
+		providerNames = append(providerNames, providerName)
+	}
+	return providerNames
 }
