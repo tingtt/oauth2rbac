@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"oauth2rbac/internal/acl"
 	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
 	logutil "oauth2rbac/internal/api/handler/util/log"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
+	"slices"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -53,8 +56,37 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	allowedScopes := []acl.Scope{}
+	for _, scope := range h.scope.Get(emails) {
+		externalURL, err := url.Parse(scope.ExternalURL)
+		if err != nil {
+			slog.Error(fmt.Errorf("failed to parse external url: %w", err).Error())
+			res.WriteHeader(http.StatusInternalServerError)
+			res.Write([]byte(clientSideRedirectConfirmErrorHTML(
+				/* request redirect to */ fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery),
+				/* cause */ "failed to parse external url",
+			)))
+			logInfo("failed to parse external url")
+			return
+		}
+		if /* same origin */ reqURL.Scheme == externalURL.Scheme && reqURL.Host == externalURL.Host {
+			exists := false
+			for i, allowedScope := range allowedScopes {
+				if /* same scope */ allowedScope.ExternalURL == scope.ExternalURL {
+					allowedScopes[i].Methods = append(allowedScopes[i].Methods, scope.Methods...)
+					allowedScopes[i].Methods = slices.Compact(allowedScopes[i].Methods)
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				allowedScopes = append(allowedScopes, scope)
+			}
+		}
+	}
+
 	claim := map[string]interface{}{
-		"scopes_allowlist": h.scope.Get(emails),
+		"allowed_scopes": allowedScopes,
 	}
 	jwtauth.SetIssuedNow(claim)
 	jwtauth.SetExpiryIn(claim, time.Hour)

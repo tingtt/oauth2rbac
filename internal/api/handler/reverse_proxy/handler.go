@@ -10,6 +10,7 @@ import (
 	logutil "oauth2rbac/internal/api/handler/util/log"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"oauth2rbac/internal/util/slices"
+	"sort"
 	"strings"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -100,15 +101,15 @@ func loginURLWithRedirectURL(redirectURL string) string {
 }
 
 func inspectallowlistClaim(claims map[string]interface{}) ([]acl.Scope, error) {
-	allowlistClaim, exist := claims["scopes_allowlist"]
+	allowlistClaim, exist := claims["allowed_scopes"]
 	if !exist {
-		return nil, errors.New("claim not found: scopes_allowlist")
+		return nil, errors.New("claim not found: allowed_scopes")
 	}
 	allowlist, ok := allowlistClaim.([]interface{})
 	if !ok {
-		return nil, errors.New("invalid format claims: scopes_allowlist")
+		return nil, errors.New("invalid format claims: allowed_scopes")
 	}
-	return slices.MapE(allowlist, func(item interface{}) (acl.Scope, error) {
+	allowedScopes, err := slices.MapE(allowlist, func(item interface{}) (acl.Scope, error) {
 		scopeMap, ok := item.(map[string]interface{})
 		if !ok {
 			return acl.Scope{}, errors.New("invalid format claims: scopes_allowlist[i]")
@@ -133,4 +134,11 @@ func inspectallowlistClaim(claims map[string]interface{}) ([]acl.Scope, error) {
 		}
 		return acl.Scope{ExternalURL: externalURL, Methods: methods}, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(allowedScopes, func(i, j int) bool {
+		return len(allowedScopes[i].ExternalURL) > len(allowedScopes[j].ExternalURL)
+	})
+	return allowedScopes, nil
 }
