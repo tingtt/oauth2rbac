@@ -87,6 +87,7 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 
 	claim := map[string]interface{}{
 		"allowed_scopes": allowedScopes,
+		"emails":         emails,
 	}
 	jwtauth.SetIssuedNow(claim)
 	jwtauth.SetExpiryIn(claim, time.Hour)
