@@ -12,6 +12,9 @@ import (
 	"oauth2rbac/internal/util/slices"
 	"sort"
 	"strings"
+	"time"
+
+	jwtmiddleware "oauth2rbac/internal/api/middleware/jwt"
 
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -33,12 +36,7 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	allowed, err := checkScope(h.jwt.Decode, req, reqURL, req.Method)
-	if /* unexpected error */ errors.Is(err, errInternal) {
-		http.Error(res, "System Error. Please contact administrator.", http.StatusInternalServerError)
-		logInfo("internal error", slog.String("err", err.Error()))
-		return
-	}
+	token, err := h.jwt.Decode(jwtauth.TokenFromCookie(req))
 	if /* unauthorized */ err != nil {
 		redirectURL := loginURLWithRedirectURL(reqURL.String())
 		h.cookieController.SetRedirectURLForAfterLogin(res, reqURL.String())
@@ -46,7 +44,14 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		logInfo("request login", slog.String("err", err.Error()))
 		return
 	}
-	if !allowed {
+
+	scope, err := checkScope(token, reqURL, req.Method)
+	if err != nil {
+		http.Error(res, "System Error. Please contact administrator.", http.StatusInternalServerError)
+		logInfo("internal error", slog.String("err", err.Error()))
+		return
+	}
+	if scope == nil {
 		http.Error(res, "Forbidden", http.StatusForbidden)
 		logInfo("no access to the scope")
 		return
@@ -60,6 +65,20 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	proxy.ServeHTTP(res, req)
 	logInfo("proxy successful (authorized)")
+
+	tokenExpiryIn := jwtmiddleware.DefaultExpiry
+	if scope.JWTExpiryIn != nil {
+		tokenExpiryIn = *scope.JWTExpiryIn
+	}
+	_, newTokenStr, err := renewJWT(token.PrivateClaims(), h.jwt.Encode, tokenExpiryIn)
+	if err != nil {
+		slog.Error(fmt.Errorf("failed to renew jwt token: %w", err).Error())
+		res.WriteHeader(http.StatusInternalServerError)
+		// TODO: error view
+		logInfo("failed to renew jwt token")
+		return
+	}
+	h.cookieController.SetJWT(res, newTokenStr)
 }
 
 func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL, reqMethod string) bool {
@@ -71,26 +90,17 @@ func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL, reqMethod strin
 	})
 }
 
-var (
-	errInternal = errors.New("internal error")
-)
-
-func checkScope(jwtDecode func(string) (jwt.Token, error), req *http.Request, reqURL url.URL, reqMethod string) (allowed bool, _ error) {
-	token, err := jwtDecode(jwtauth.TokenFromCookie(req))
-	if err != nil {
-		return false, err
-	}
+func checkScope(token jwt.Token, reqURL url.URL, reqMethod string) (*acl.Scope, error) {
 	allowlist, err := inspectallowlistClaim(token.PrivateClaims())
 	if err != nil {
-		return false, fmt.Errorf("%w: %w", errInternal, err)
+		return nil, err
 	}
-	allowed = slices.Some(allowlist, func(scope acl.Scope) bool {
+	return slices.Find(allowlist, func(scope acl.Scope) bool {
 		return strings.HasPrefix(reqURL.String(), scope.ExternalURL) &&
 			slices.Some(scope.Methods, func(method string) bool {
 				return method == reqMethod || method == "*"
 			})
-	})
-	return allowed, nil
+	}), nil
 }
 
 func loginURLWithRedirectURL(redirectURL string) string {
@@ -141,4 +151,18 @@ func inspectallowlistClaim(claims map[string]interface{}) ([]acl.Scope, error) {
 		return len(allowedScopes[i].ExternalURL) > len(allowedScopes[j].ExternalURL)
 	})
 	return allowedScopes, nil
+}
+
+func renewJWT(
+	claim map[string]interface{},
+	encodeFunc func(claims map[string]interface{}) (t jwt.Token, tokenString string, err error),
+	expiryIn time.Duration,
+) (t jwt.Token, tokenString string, err error) {
+	jwtauth.SetIssuedNow(claim)
+	jwtauth.SetExpiryIn(claim, expiryIn)
+	t, str, err := encodeFunc(claim)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to encode jwt token: %w", err)
+	}
+	return t, str, nil
 }

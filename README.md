@@ -41,6 +41,7 @@ acl:
   "*":                             # allow all signed-in user
     - external_url: "http://docs.example.com/"
       methods: ["GET"]
+      jwt_expires_in: 10800        # JWT expires in 3 hour (default)
   "*@example.com":                 # allow users with a specific domain
     - external_url: "http://docs.example.com/"
       methods: ["*"]
