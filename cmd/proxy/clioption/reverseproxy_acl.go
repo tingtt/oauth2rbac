@@ -65,23 +65,28 @@ func validateURLformats(urls ...string) error {
 //	    target: "http://www:80/"
 //	  - external_url: "http://www.example.com/blog/"
 //	    target: "http://blog:80/"                    # cut the base url from request path with trailing slash "target"
-//	                                                 #   "http://www.example.com/blog/1" proxy to "http:/blog:80/1"
+//	                                                 #   e.g. "http://www.example.com/blog/1" proxy to "http:/blog:80/1"
+//	                                                 # (if "target" does not have trailing slash, base url not cut.)
 //	  - external_url: "http://docs.example.com/"
 //	    target: "http://docs:80/"
 //	  - external_url: "http://admin.example.com/"
 //	    target: "http://admin:80/"
 //	    set_headers:
-//	      Remote-User: ["oauth2rbac"]                # MIME header key will be normalized
-//	                                                 #   "CUSTOM-HEADER" canonicalize to "Custom-Header"
+//	      Remote-User: ["tingtt"]                    # MIME header key will be normalized
+//	                                                 #  e.g.  "CUSTOM-HEADER" canonicalize to "Custom-Header"
 //	acl:
 //	  "-":                             # public
-//	    - "http://www.example.com/"
+//	    - external_url: "http://www.example.com/"
+//	      methods: ["GET"]
 //	  "*":                             # allow all signed-in user
-//	    - "http://docs.example.com/"
+//	    - external_url: "http://docs.example.com/"
+//	      methods: ["GET"]
 //	  "*@gmail.com":                   # allow all gmail user
-//	    - "http://docs.example.com/"
+//	    - external_url: "http://docs.example.com/"
+//	      methods: ["*"]
 //	  "example@gmail.com":             # allow specified gmail user
-//	    - "http://admin.example.com/"
+//	    - external_url: "http://admin.example.com/"
+//	      methods: ["GET"]
 //	```
 func loadRevProxyACLManifest(yamlFilePath string) (*RevProxyACLManifest, error) {
 	data, err := os.ReadFile(yamlFilePath)

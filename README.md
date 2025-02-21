@@ -25,14 +25,15 @@ proxies:
     target: "http://www:80/"
   - external_url: "http://www.example.com/blog/"
     target: "http://blog:80/"                    # cut the base url from request path with trailing slash "target"
-                                                 #   "http://www.example.com/blog/1" proxy to "http:/blog:80/1"
+                                                 #   e.g. "http://www.example.com/blog/1" proxy to "http:/blog:80/1"
+                                                 # (if "target" does not have trailing slash, base url not cut.)
   - external_url: "http://docs.example.com/"
     target: "http://docs:80/"
   - external_url: "http://admin.example.com/"
     target: "http://admin:80/"
     set_headers:
       Remote-User: ["tingtt"]                    # MIME header key will be normalized
-                                                 #   "CUSTOM-HEADER" canonicalize to "Custom-Header"
+                                                 #  e.g.  "CUSTOM-HEADER" canonicalize to "Custom-Header"
 acl:
   "-":                             # public
     - external_url: "http://www.example.com/"
