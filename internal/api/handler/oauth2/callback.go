@@ -90,7 +90,7 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 	}
 	jwtauth.SetIssuedNow(claim)
 	jwtauth.SetExpiryIn(claim, time.Hour)
-	_, tokenStr, err := h.JWTAuth.Encode(claim)
+	_, tokenStr, err := h.jwt.Encode(claim)
 	if err != nil {
 		slog.Error(fmt.Errorf("failed to encode jwt token: %w", err).Error())
 		res.WriteHeader(http.StatusInternalServerError)
@@ -102,7 +102,7 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	h.cookieController.SetJWT(res, tokenStr)
+	h.cookie.SetJWT(res, tokenStr)
 	cookieRedirectPath, err := req.Cookie(cookieutil.COOKIE_KEY_REDIRECT_URL_FOR_AFTER_LOGIN)
 	if /* cookie redirect url not received */ err != nil {
 		res.Write([]byte(clientSideRedirectHTML("/")))

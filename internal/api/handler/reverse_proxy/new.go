@@ -16,11 +16,11 @@ import (
 )
 
 type handler struct {
-	proxyMatchKeys   []string // need sorted in descending order by number of characters
-	proxies          map[string]*httputil.ReverseProxy
-	jwt              *jwtauth.JWTAuth
-	publicEndpoints  []acl.Scope
-	cookieController cookieutil.Controller
+	proxyMatchKeys  []string // need sorted in descending order by number of characters
+	proxies         map[string]*httputil.ReverseProxy
+	jwt             *jwtauth.JWTAuth
+	publicEndpoints []acl.Scope
+	cookie          cookieutil.Controller
 }
 
 func NewReverseProxyHandler(config Config, option *handleroption.Option) *handler {
@@ -55,6 +55,10 @@ func newSingleHostReverseProxy(targetURL *url.URL, matchPath string, headers map
 		rewriteRequestURL(req)
 		setHeaders(req, headers)
 	}
+	// proxy.ModifyResponse = func(res *http.Response) error {
+	// 	TODO: implement ModifyResponse
+	// 	return nil
+	// }
 	proxy.ErrorHandler = handleReverceProxyError
 	return proxy
 }

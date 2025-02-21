@@ -10,10 +10,10 @@ import (
 )
 
 type handler struct {
-	oauth2           map[string]oauth2.Service
-	JWTAuth          *jwtauth.JWTAuth
-	scope            acl.ScopeProvider
-	cookieController cookieutil.Controller
+	oauth2 map[string]oauth2.Service
+	jwt    *jwtauth.JWTAuth
+	scope  acl.ScopeProvider
+	cookie cookieutil.Controller
 }
 
 func New(oauth2 map[string]oauth2.Service, option *handleroption.Option) handler {

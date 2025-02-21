@@ -39,7 +39,7 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	token, err := h.jwt.Decode(jwtauth.TokenFromCookie(req))
 	if /* unauthorized */ err != nil {
 		redirectURL := loginURLWithRedirectURL(reqURL.String())
-		h.cookieController.SetRedirectURLForAfterLogin(res, reqURL.String())
+		h.cookie.SetRedirectURLForAfterLogin(res, reqURL.String())
 		http.Redirect(res, req, redirectURL, http.StatusFound)
 		logInfo("request login", slog.String("err", err.Error()))
 		return
@@ -78,7 +78,7 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		logInfo("failed to renew jwt token")
 		return
 	}
-	h.cookieController.SetJWT(res, newTokenStr)
+	h.cookie.SetJWT(res, newTokenStr)
 }
 
 func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL, reqMethod string) bool {
