@@ -13,7 +13,7 @@ func (h *handler) SelectProvider(rw http.ResponseWriter, req *http.Request) {
 	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
 	res, logInfo := logutil.InfoLogger(reqURL, req.Method, rw, req)
 
-	html := ui.Layout(ui.ProviderListUI(req.URL.RawQuery))
+	html := ui.ProviderListUI(req.URL.RawQuery)
 	err := html.Render(res)
 	if err != nil {
 		slog.Error(fmt.Errorf("failed render html: %w", err).Error())

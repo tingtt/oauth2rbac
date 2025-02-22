@@ -6,7 +6,7 @@ import (
 	"maragu.dev/gomponents/html"
 )
 
-func Layout(child gomponents.Node) gomponents.Node {
+func layout(child gomponents.Node) gomponents.Node {
 	return html.Doctype(html.HTML(
 		html.StyleEl(gomponents.Text(dedent.Dedent(`
 			:root {
@@ -27,6 +27,15 @@ func Layout(child gomponents.Node) gomponents.Node {
 			html.Meta(
 				html.Name("viewport"),
 				html.Content("width=device-width, initial-scale=1"),
+			),
+			html.TitleEl(
+				html.ID("title"),
+			),
+			html.Script(
+				gomponents.Raw(dedent.Dedent(`
+					const title = "Sign in to " + location.host;
+					document.getElementById("title").innerText = title;
+				`)),
 			),
 		),
 		html.Body(

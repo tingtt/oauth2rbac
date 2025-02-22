@@ -6,7 +6,7 @@ import (
 )
 
 func ClientSideRedirect(location string) gomponents.Node {
-	return Layout(
+	return layout(
 		html.Div(
 			html.P(
 				gomponents.Text("If you are not redirected automatically, follow this "),

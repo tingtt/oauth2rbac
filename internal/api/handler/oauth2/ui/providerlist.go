@@ -12,7 +12,7 @@ import (
 )
 
 func ProviderListUI(rawQuery string) gomponents.Node {
-	return html.Div(
+	return layout(html.Div(
 		html.Style(dedent.Dedent(`
 			max-width: 320px;
 			margin: 40px auto;
@@ -88,7 +88,7 @@ func ProviderListUI(rawQuery string) gomponents.Node {
 				html.P(gomponents.Text("tingtt/oauth2rbac")),
 			),
 		),
-	)
+	))
 }
 
 type IconFunc func(width, height int) gomponents.Node
