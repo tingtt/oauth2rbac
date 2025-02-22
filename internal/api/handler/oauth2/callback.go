@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"oauth2rbac/internal/acl"
+	"oauth2rbac/internal/api/handler/oauth2/ui"
 	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
 	logutil "oauth2rbac/internal/api/handler/util/log"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
@@ -106,31 +107,24 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 	h.cookie.SetJWT(res, tokenStr)
 	cookieRedirectPath, err := req.Cookie(cookieutil.COOKIE_KEY_REDIRECT_URL_FOR_AFTER_LOGIN)
 	if /* cookie redirect url not received */ err != nil {
-		res.Write([]byte(clientSideRedirectHTML("/")))
+		html := ui.ClientSideRedirect("/")
+		err = html.Render(rw)
+		if err != nil {
+			slog.Error(fmt.Errorf("failed render html: %w", err).Error())
+			http.Error(res, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 		logInfo("signed-in", slog.Bool("cookie_redirect_url_found", false))
 		return
 	}
-	res.Write([]byte(clientSideRedirectHTML(cookieRedirectPath.Value)))
+	html := ui.ClientSideRedirect(cookieRedirectPath.Value)
+	err = html.Render(rw)
+	if err != nil {
+		slog.Error(fmt.Errorf("failed render html: %w", err).Error())
+		http.Error(res, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	logInfo("signed-in", slog.Bool("cookie_redirect_url_found", true))
-}
-
-func clientSideRedirectHTML(url string) string {
-	return fmt.Sprintf(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=%s">
-    <script type="text/javascript">
-        window.location.href = "%s";
-    </script>
-    <title>Redirecting...</title>
-</head>
-<body>
-    <p>If you are not redirected automatically, follow this <a href="%s">link</a>.</p>
-</body>
-</html>
-`, url, url, url)
 }
 
 func clientSideRedirectConfirmErrorHTML(url string, cause string) string {
