@@ -19,7 +19,7 @@ build-docker:
 .PHONY: e2e-up
 e2e-up:
 	cd test/e2e/; \
-		docker compose up --watch --build
+		docker compose up --watch
 
 .PHONY: e2e-down
 e2e-down:
