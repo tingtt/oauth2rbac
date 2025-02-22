@@ -7,6 +7,7 @@ WORKDIR ${ROOT}
 RUN apk update
 COPY go.mod go.sum ./
 RUN go mod download
+COPY . .
 EXPOSE ${PORT}
 
 

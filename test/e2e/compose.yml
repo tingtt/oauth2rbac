@@ -4,8 +4,17 @@ services:
       context: ../../
       dockerfile: Dockerfile
       target: dev
+    develop:
+      watch:
+        - path: ../../go.sum
+          action: rebuild
+        - path: ../../
+          target: /go/src/app
+          action: sync+restart
+        - path: config.yml
+          target: /etc/oauth2rbac/config.yml
+          action: sync+restart
     volumes:
-      - ../../:/go/src/app
       - type: bind
         source: config.yml
         target: /etc/oauth2rbac/config.yml
