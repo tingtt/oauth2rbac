@@ -1,10 +1,10 @@
 package oauth2handler
 
 import (
-	"oauth2rbac/internal/acl"
-	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
-	handleroption "oauth2rbac/internal/api/handler/util/option"
-	"oauth2rbac/internal/oauth2"
+	"github.com/tingtt/oauth2rbac/internal/acl"
+	cookieutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/cookie"
+	handleroption "github.com/tingtt/oauth2rbac/internal/api/handler/util/option"
+	"github.com/tingtt/oauth2rbac/internal/oauth2"
 
 	"github.com/go-chi/jwtauth/v5"
 )

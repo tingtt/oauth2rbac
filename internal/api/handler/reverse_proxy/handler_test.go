@@ -1,8 +1,9 @@
 package reverseproxy
 
 import (
-	handleroption "oauth2rbac/internal/api/handler/util/option"
 	"testing"
+
+	handleroption "github.com/tingtt/oauth2rbac/internal/api/handler/util/option"
 
 	"github.com/stretchr/testify/assert"
 )

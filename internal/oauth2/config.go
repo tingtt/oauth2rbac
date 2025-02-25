@@ -4,7 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"oauth2rbac/internal/acl"
+
+	"github.com/tingtt/oauth2rbac/internal/acl"
 
 	"golang.org/x/oauth2"
 )

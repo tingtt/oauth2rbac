@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"oauth2rbac/internal/acl"
-	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
-	handleroption "oauth2rbac/internal/api/handler/util/option"
-	urlutil "oauth2rbac/internal/api/handler/util/url"
-	"oauth2rbac/internal/util/tree"
 	"strings"
+
+	"github.com/tingtt/oauth2rbac/internal/acl"
+	cookieutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/cookie"
+	handleroption "github.com/tingtt/oauth2rbac/internal/api/handler/util/option"
+	urlutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/url"
+	"github.com/tingtt/oauth2rbac/internal/util/tree"
 
 	"github.com/go-chi/jwtauth/v5"
 )

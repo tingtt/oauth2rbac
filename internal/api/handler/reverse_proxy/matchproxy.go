@@ -3,8 +3,9 @@ package reverseproxy
 import (
 	"net/http/httputil"
 	"net/url"
-	"oauth2rbac/internal/util/slices"
 	"strings"
+
+	"github.com/tingtt/oauth2rbac/internal/util/slices"
 )
 
 func (h *handler) matchProxy(reqURL url.URL) (proxy *httputil.ReverseProxy) {

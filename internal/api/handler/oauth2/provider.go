@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"oauth2rbac/internal/api/handler/oauth2/ui"
-	logutil "oauth2rbac/internal/api/handler/util/log"
-	urlutil "oauth2rbac/internal/api/handler/util/url"
+
+	"github.com/tingtt/oauth2rbac/internal/api/handler/oauth2/ui"
+	logutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/log"
+	urlutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/url"
 )
 
 func (h *handler) SelectProvider(rw http.ResponseWriter, req *http.Request) {

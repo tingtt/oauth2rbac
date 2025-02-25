@@ -2,8 +2,9 @@ package oauth2handler
 
 import (
 	"net/http"
-	logutil "oauth2rbac/internal/api/handler/util/log"
-	urlutil "oauth2rbac/internal/api/handler/util/url"
+
+	logutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/log"
+	urlutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/url"
 
 	"github.com/go-chi/chi/v5"
 )

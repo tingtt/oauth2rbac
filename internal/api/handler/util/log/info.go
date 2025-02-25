@@ -5,8 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	urlutil "oauth2rbac/internal/api/handler/util/url"
-	"oauth2rbac/internal/util/slices"
+
+	urlutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/url"
+	"github.com/tingtt/oauth2rbac/internal/util/slices"
 )
 
 func InfoLogger(reqURL url.URL, method string, rw http.ResponseWriter, req *http.Request) (

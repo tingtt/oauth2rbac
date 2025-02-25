@@ -3,9 +3,10 @@ package clioption
 import (
 	"crypto/tls"
 	"log/slog"
-	"oauth2rbac/internal/acl"
-	reverseproxy "oauth2rbac/internal/api/handler/reverse_proxy"
-	"oauth2rbac/internal/oauth2"
+
+	"github.com/tingtt/oauth2rbac/internal/acl"
+	reverseproxy "github.com/tingtt/oauth2rbac/internal/api/handler/reverse_proxy"
+	"github.com/tingtt/oauth2rbac/internal/oauth2"
 
 	"github.com/spf13/pflag"
 )

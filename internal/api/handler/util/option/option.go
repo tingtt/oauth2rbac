@@ -3,9 +3,10 @@ package handleroption
 import (
 	"errors"
 	"log/slog"
-	"oauth2rbac/internal/acl"
-	cookieutil "oauth2rbac/internal/api/handler/util/cookie"
-	"oauth2rbac/internal/api/middleware/jwt"
+
+	"github.com/tingtt/oauth2rbac/internal/acl"
+	cookieutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/cookie"
+	"github.com/tingtt/oauth2rbac/internal/api/middleware/jwt"
 
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/tingtt/options"

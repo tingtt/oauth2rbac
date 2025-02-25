@@ -3,8 +3,9 @@ package clioption
 import (
 	"errors"
 	"fmt"
-	"oauth2rbac/internal/oauth2"
 	"strings"
+
+	"github.com/tingtt/oauth2rbac/internal/oauth2"
 )
 
 func oauth2Config(clients *[]string) (map[string]oauth2.Service, error) {

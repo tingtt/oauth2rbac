@@ -2,8 +2,9 @@ package oauth2
 
 import (
 	"context"
-	"oauth2rbac/internal/oauth2/github"
-	"oauth2rbac/internal/oauth2/google"
+
+	"github.com/tingtt/oauth2rbac/internal/oauth2/github"
+	"github.com/tingtt/oauth2rbac/internal/oauth2/google"
 
 	"golang.org/x/oauth2"
 )

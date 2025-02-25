@@ -3,11 +3,12 @@ package clioption
 import (
 	"fmt"
 	"net/url"
-	"oauth2rbac/internal/acl"
-	reverseproxy "oauth2rbac/internal/api/handler/reverse_proxy"
-	"oauth2rbac/internal/util/slices"
 	"os"
 	"time"
+
+	"github.com/tingtt/oauth2rbac/internal/acl"
+	reverseproxy "github.com/tingtt/oauth2rbac/internal/api/handler/reverse_proxy"
+	"github.com/tingtt/oauth2rbac/internal/util/slices"
 
 	"gopkg.in/yaml.v3"
 )

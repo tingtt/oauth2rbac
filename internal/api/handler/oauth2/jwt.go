@@ -2,7 +2,8 @@ package oauth2handler
 
 import (
 	"encoding/json"
-	"oauth2rbac/pkg/jwtclaims"
+
+	"github.com/tingtt/oauth2rbac/pkg/jwtclaims"
 )
 
 type JWTClaims jwtclaims.Claims

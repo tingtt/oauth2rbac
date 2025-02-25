@@ -2,7 +2,8 @@ package jwtclaims
 
 import (
 	"encoding/json"
-	"oauth2rbac/internal/acl"
+
+	"github.com/tingtt/oauth2rbac/internal/acl"
 )
 
 type Claims struct {

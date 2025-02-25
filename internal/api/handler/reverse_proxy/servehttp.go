@@ -6,16 +6,17 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"oauth2rbac/internal/acl"
-	logutil "oauth2rbac/internal/api/handler/util/log"
-	urlutil "oauth2rbac/internal/api/handler/util/url"
-	"oauth2rbac/internal/util/slices"
-	"oauth2rbac/pkg/jwtclaims"
 	"sort"
 	"strings"
 	"time"
 
-	jwtmiddleware "oauth2rbac/internal/api/middleware/jwt"
+	"github.com/tingtt/oauth2rbac/internal/acl"
+	logutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/log"
+	urlutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/url"
+	"github.com/tingtt/oauth2rbac/internal/util/slices"
+	"github.com/tingtt/oauth2rbac/pkg/jwtclaims"
+
+	jwtmiddleware "github.com/tingtt/oauth2rbac/internal/api/middleware/jwt"
 
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/lestrrat-go/jwx/v2/jwt"

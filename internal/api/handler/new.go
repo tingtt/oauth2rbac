@@ -2,10 +2,11 @@ package handler
 
 import (
 	"net/http"
-	oauth2handler "oauth2rbac/internal/api/handler/oauth2"
-	reverseproxy "oauth2rbac/internal/api/handler/reverse_proxy"
-	handleroption "oauth2rbac/internal/api/handler/util/option"
-	"oauth2rbac/internal/oauth2"
+
+	oauth2handler "github.com/tingtt/oauth2rbac/internal/api/handler/oauth2"
+	reverseproxy "github.com/tingtt/oauth2rbac/internal/api/handler/reverse_proxy"
+	handleroption "github.com/tingtt/oauth2rbac/internal/api/handler/util/option"
+	"github.com/tingtt/oauth2rbac/internal/oauth2"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"

@@ -2,9 +2,10 @@ package main
 
 import (
 	"log/slog"
-	"oauth2rbac/cmd/proxy/clioption"
-	"oauth2rbac/cmd/proxy/server"
 	"os"
+
+	"github.com/tingtt/oauth2rbac/cmd/proxy/clioption"
+	"github.com/tingtt/oauth2rbac/cmd/proxy/server"
 )
 
 func main() {

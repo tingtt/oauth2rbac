@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	handleroption "oauth2rbac/internal/api/handler/util/option"
-	"oauth2rbac/internal/util/slices"
 	"strconv"
 	"strings"
 	"testing"
+
+	handleroption "github.com/tingtt/oauth2rbac/internal/api/handler/util/option"
+	"github.com/tingtt/oauth2rbac/internal/util/slices"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

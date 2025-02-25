@@ -3,8 +3,9 @@ package clioption
 import (
 	"crypto/tls"
 	"errors"
-	"oauth2rbac/internal/util/slices"
 	"strings"
+
+	"github.com/tingtt/oauth2rbac/internal/util/slices"
 )
 
 func tlsCerts(pairs []string) ([]tls.Certificate, error) {

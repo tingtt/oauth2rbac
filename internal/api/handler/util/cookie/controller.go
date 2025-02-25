@@ -2,9 +2,10 @@ package cookieutil
 
 import (
 	"net/http"
-	logutil "oauth2rbac/internal/api/handler/util/log"
 	"strings"
 	"time"
+
+	logutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/log"
 )
 
 const (

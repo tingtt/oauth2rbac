@@ -2,9 +2,10 @@ package ui
 
 import (
 	"fmt"
-	"oauth2rbac/internal/api/handler/oauth2/ui/assets"
-	"oauth2rbac/internal/oauth2"
 	"slices"
+
+	"github.com/tingtt/oauth2rbac/internal/api/handler/oauth2/ui/assets"
+	"github.com/tingtt/oauth2rbac/internal/oauth2"
 
 	"github.com/lithammer/dedent"
 	"maragu.dev/gomponents"

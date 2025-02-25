@@ -1,4 +1,4 @@
-module oauth2rbac
+module github.com/tingtt/oauth2rbac
 
 go 1.23
 

@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"oauth2rbac/cmd/proxy/clioption"
-	"oauth2rbac/internal/api/handler"
-	handleroption "oauth2rbac/internal/api/handler/util/option"
+
+	"github.com/tingtt/oauth2rbac/cmd/proxy/clioption"
+	"github.com/tingtt/oauth2rbac/internal/api/handler"
+	handleroption "github.com/tingtt/oauth2rbac/internal/api/handler/util/option"
 )
 
 func Serve(cliOption clioption.CLIOption) error {
