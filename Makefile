@@ -16,6 +16,11 @@ build:
 build-docker:
 	docker build -t oauth2rbac --build-arg GO_ENTRYPOINT='cmd/proxy/main.go' .
 
+.PHONY: e2e-build
+e2e-build:
+	cd test/e2e/; \
+		docker compose build
+
 .PHONY: e2e-up
 e2e-up:
 	cd test/e2e/; \
