@@ -35,19 +35,20 @@ proxies:
       Remote-User: ["tingtt"]                    # MIME header key will be normalized
                                                  #  e.g.  "CUSTOM-HEADER" canonicalize to "Custom-Header"
 acl:
-  "-":                             # public
-    - external_url: "http://www.example.com/"
-      methods: ["GET"]
-  "*":                             # allow all signed-in user
-    - external_url: "http://docs.example.com/"
-      methods: ["GET"]
-      jwt_expires_in: 10800        # JWT expires in 3 hour (default)
-  "*@example.com":                 # allow users with a specific domain
-    - external_url: "http://docs.example.com/"
-      methods: ["*"]
-  "admin@example.com":             # allow specified email user
-    - external_url: "http://admin.example.com/"
-      methods: ["GET"]
+  "http://www.example.com/":          # External URL
+    allowlist:
+      - methods: ["GET"]
+        emails: ["-"]                 # public
+  "http://docs.example.com/":
+    jwt_expiry_in: 10800              # JWT expires in 3 hour (default)
+    allowlist:
+      - methods: ["GET"]
+        emails: ["*"]                 # allow all signed-in user
+      - methods: ["*"]
+        emails: ["*@example.com"]     # allow users with a specific domain
+  "http://admin.example.com/":
+      - methods: ["*"]
+        emails: ["admin@example.com"] # allow specified email user
 ```
 
 ### Proxies Section
