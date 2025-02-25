@@ -49,6 +49,8 @@ acl:
   "http://admin.example.com/":
       - methods: ["*"]
         emails: ["admin@example.com"] # allow specified email user
+        roles: ["admin"]              # role name
+                                      #   It will be included in JWT claim.
 ```
 
 ### Proxies Section
@@ -59,13 +61,13 @@ acl:
 
 ### ACL Section
 
-#### Email
-
-- **"-"**: Public access. No authentication required.
-- **"*"**: Allows access to all authenticated users.
-- **"*@example.com"**: Allows access to all users with a specific domain.
-
-#### Allowed request
-
 - **external_url**: The external URL allow.
+
+#### Allowlist
+
 - **mothods**: List of methods. (The wildcard “*” will allow all methods.)
+- **emails**: List of emails.
+  - **"-"**: Public access. No authentication required.
+  - **"*"**: Allows access to all authenticated users.
+  - **"*@example.com"**: Allows access to all users with a specific domain.
+- **roles**: List of roles. (It will be included in JWT claim.)

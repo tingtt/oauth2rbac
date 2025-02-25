@@ -31,6 +31,7 @@ type scopeConfig struct {
 type allowlistItem struct {
 	Methods []string         `yaml:"methods"`
 	Emails  []acl.EmailRegex `yaml:"emails"`
+	Roles   []string         `yaml:"roles"`
 }
 
 func loadAndValidateManifest(yamlFilePath string) (reverseproxy.Config, acl.Pool, error) {
@@ -85,6 +86,7 @@ func convertACL(pool poolConfig) (acl.Pool, error) {
 				convertedScope := acl.Scope{
 					ExternalURL: externalURL,
 					Methods:     allowlist.Methods,
+					Roles:       allowlist.Roles,
 				}
 				if scope.JWTExpiryIn != nil {
 					d := time.Duration(*scope.JWTExpiryIn * int64(time.Second))
@@ -129,6 +131,8 @@ func convertACL(pool poolConfig) (acl.Pool, error) {
 //	  "http://admin.example.com/":
 //	      - methods: ["*"]
 //	        emails: ["admin@example.com"] # allow specified email user
+//	        roles: ["admin"]              # role name
+//	                                      #   It will be included in JWT claim.
 //	```
 func loadRevProxyACLManifest(yamlFilePath string) (*RevProxyACLManifest, error) {
 	data, err := os.ReadFile(yamlFilePath)
