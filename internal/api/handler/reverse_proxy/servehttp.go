@@ -10,6 +10,7 @@ import (
 	logutil "oauth2rbac/internal/api/handler/util/log"
 	urlutil "oauth2rbac/internal/api/handler/util/url"
 	"oauth2rbac/internal/util/slices"
+	"oauth2rbac/pkg/jwtclaims"
 	"sort"
 	"strings"
 	"time"
@@ -110,15 +111,9 @@ func loginURLWithRedirectURL(redirectURL string) string {
 	)
 }
 
-type privateClaims struct {
-	AllowedScopes []acl.Scope `json:"allowed_scopes"`
-	Emails        []acl.Email `json:"emails"`
-}
-
 func inspectallowlistClaim(claims map[string]interface{}) ([]acl.Scope, error) {
-	c := &privateClaims{}
 	claimsJSON, _ := json.Marshal(claims)
-	err := json.Unmarshal(claimsJSON, c)
+	c, err := jwtclaims.Unmarshal(claimsJSON)
 	if err != nil {
 		return nil, err
 	}

@@ -55,5 +55,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/jwtauth/v5 v5.3.1
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	google.golang.org/api v0.193.0
 )

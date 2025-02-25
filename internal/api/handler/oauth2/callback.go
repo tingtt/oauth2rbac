@@ -86,10 +86,8 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	claim := map[string]interface{}{
-		"allowed_scopes": allowedScopes,
-		"emails":         emails,
-	}
+	c := JWTClaims{allowedScopes, emails}
+	claim := c.MapCollect()
 	jwtauth.SetIssuedNow(claim)
 	jwtauth.SetExpiryIn(claim, time.Hour)
 	_, tokenStr, err := h.jwt.Encode(claim)
