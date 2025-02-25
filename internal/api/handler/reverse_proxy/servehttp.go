@@ -57,15 +57,6 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	proxy := h.matchProxy(reqURL)
-	if proxy == nil {
-		http.Error(res, "Not Found", http.StatusNotFound)
-		logInfo("proxy target not found")
-		return
-	}
-	proxy.ServeHTTP(res, req)
-	logInfo("proxy successful (authorized)")
-
 	tokenExpiryIn := jwtmiddleware.DefaultExpiry
 	if scope.JWTExpiryIn != nil {
 		tokenExpiryIn = *scope.JWTExpiryIn
@@ -79,6 +70,15 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	h.cookie.SetJWT(res, newTokenStr)
+
+	proxy := h.matchProxy(reqURL)
+	if proxy == nil {
+		http.Error(res, "Not Found", http.StatusNotFound)
+		logInfo("proxy target not found")
+		return
+	}
+	proxy.ServeHTTP(res, req)
+	logInfo("proxy successful (authorized)")
 }
 
 func publicEndpoint(publicEndpoints []acl.Scope, reqURL url.URL, reqMethod string) bool {
