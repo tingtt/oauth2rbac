@@ -1,7 +1,7 @@
 package reverseproxy
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -110,47 +110,22 @@ func loginURLWithRedirectURL(redirectURL string) string {
 	)
 }
 
+type privateClaims struct {
+	AllowedScopes []acl.Scope `json:"allowed_scopes"`
+	Emails        []acl.Email `json:"emails"`
+}
+
 func inspectallowlistClaim(claims map[string]interface{}) ([]acl.Scope, error) {
-	allowlistClaim, exist := claims["allowed_scopes"]
-	if !exist {
-		return nil, errors.New("claim not found: allowed_scopes")
-	}
-	allowlist, ok := allowlistClaim.([]interface{})
-	if !ok {
-		return nil, errors.New("invalid format claims: allowed_scopes")
-	}
-	allowedScopes, err := slices.MapE(allowlist, func(item interface{}) (acl.Scope, error) {
-		scopeMap, ok := item.(map[string]interface{})
-		if !ok {
-			return acl.Scope{}, errors.New("invalid format claims: scopes_allowlist[i]")
-		}
-		externalURL, ok := scopeMap["ExternalURL"].(string)
-		if !ok {
-			return acl.Scope{}, errors.New("invalid format claims: scopes_allowlist[i].ExternalURL")
-		}
-		methodsI, ok := scopeMap["Methods"].([]interface{})
-		if !ok {
-			return acl.Scope{}, errors.New("invalid format claims: scopes_allowlist[i].Methods")
-		}
-		methods, err := slices.MapE(methodsI, func(methodI interface{}) (string, error) {
-			method, ok := methodI.(string)
-			if !ok {
-				return "", errors.New("invalid format claims: scopes_allowlist[i].Methods[i]")
-			}
-			return method, nil
-		})
-		if err != nil {
-			return acl.Scope{}, err
-		}
-		return acl.Scope{ExternalURL: externalURL, Methods: methods}, nil
-	})
+	c := &privateClaims{}
+	claimsJSON, _ := json.Marshal(claims)
+	err := json.Unmarshal(claimsJSON, c)
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(allowedScopes, func(i, j int) bool {
-		return len(allowedScopes[i].ExternalURL) > len(allowedScopes[j].ExternalURL)
+	sort.Slice(c.AllowedScopes, func(i, j int) bool {
+		return len(c.AllowedScopes[i].ExternalURL) > len(c.AllowedScopes[j].ExternalURL)
 	})
-	return allowedScopes, nil
+	return c.AllowedScopes, nil
 }
 
 func renewJWT(
