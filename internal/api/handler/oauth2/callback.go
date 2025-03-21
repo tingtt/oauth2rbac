@@ -14,6 +14,7 @@ import (
 	cookieutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/cookie"
 	logutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/log"
 	urlutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/url"
+	"github.com/tingtt/oauth2rbac/pkg/jwtclaims"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
@@ -46,15 +47,15 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 		logInfo("failed to exchange code to token", slog.String("provider", providerName), slog.String("error", err.Error()))
 		return
 	}
-	emails, err := oauth2.GetEmail(ctx, oauth2Token)
+	oauth2ProviderUsername, emails, err := oauth2.GetUserInfo(ctx, oauth2Token)
 	if err != nil {
-		slog.Error("failed to get email", slog.String("provider", providerName), slog.String("error", err.Error()))
+		slog.Error("failed to get userinfo", slog.String("provider", providerName), slog.String("error", err.Error()))
 		res.WriteHeader(http.StatusInternalServerError)
 		res.Write([]byte(clientSideRedirectConfirmErrorHTML(
 			/* request redirect to */ fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery),
-			/* cause */ "failed to get email",
+			/* cause */ "failed to get userinfo",
 		)))
-		logInfo("failed to get email", slog.String("provider", providerName), slog.String("error", err.Error()))
+		logInfo("failed to get userinfo", slog.String("provider", providerName), slog.String("error", err.Error()))
 		return
 	}
 
@@ -87,7 +88,16 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	c := JWTClaims{allowedScopes, emails}
+	c := JWTClaims{
+		AllowedScopes: allowedScopes,
+		Emails:        emails,
+	}
+	switch providerName {
+	case "github":
+		c.GitHub = &jwtclaims.ClaimsGitHub{ID: oauth2ProviderUsername}
+	case "google":
+		c.Google = &jwtclaims.ClaimsGoogle{Username: oauth2ProviderUsername}
+	}
 	claim := c.MapCollect()
 	jwtauth.SetIssuedNow(claim)
 	jwtauth.SetExpiryIn(claim, time.Hour)

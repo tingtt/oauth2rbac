@@ -16,19 +16,19 @@ type Service interface {
 	Config() Config
 	AuthCodeURL(redirectUrl string) string
 	Exchange(ctx context.Context, code string, redirectURL string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
-	GetEmail(ctx context.Context, token *oauth2.Token) (emails []acl.Email, err error)
+	GetUserInfo(ctx context.Context, token *oauth2.Token) (username string, emails []acl.Email, err error)
 }
 
 func New(
 	c *oauth2.Config,
-	getEmailFunc func(ctx context.Context, config oauth2.Config, token *oauth2.Token) (emails []string, err error),
+	getUserInfoFunc func(ctx context.Context, config oauth2.Config, token *oauth2.Token) (username string, emails []string, err error),
 ) Service {
-	return &config{value: c, getEmailFunc: getEmailFunc}
+	return &config{value: c, getUserInfoFunc: getUserInfoFunc}
 }
 
 type config struct {
-	value        *oauth2.Config
-	getEmailFunc func(ctx context.Context, config oauth2.Config, token *oauth2.Token) (emails []string, err error)
+	value           *oauth2.Config
+	getUserInfoFunc func(ctx context.Context, config oauth2.Config, token *oauth2.Token) (username string, emails []string, err error)
 }
 
 func (c *config) Config() Config {
@@ -53,6 +53,6 @@ func (c *config) Exchange(ctx context.Context, code string, redirectURL string, 
 	return config.Exchange(ctx, code, opts...)
 }
 
-func (c *config) GetEmail(ctx context.Context, token *oauth2.Token) ([]acl.Email, error) {
-	return c.getEmailFunc(ctx, *c.value, token)
+func (c *config) GetUserInfo(ctx context.Context, token *oauth2.Token) (string, []acl.Email, error) {
+	return c.getUserInfoFunc(ctx, *c.value, token)
 }

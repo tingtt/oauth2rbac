@@ -27,7 +27,7 @@ func oauth2Config(clients *[]string) (map[string]oauth2.Service, error) {
 			ClientSecret: clientSecret,
 			Scopes:       provider.Scopes,
 			Endpoint:     provider.Endpoint,
-		}, provider.GetEmailFunc)
+		}, provider.GetUserInfoFunc)
 	}
 	if len(oauth2Config) == 0 {
 		return nil, errors.New("CLI option `--oauth2-client` is required")

@@ -12,18 +12,18 @@ import (
 
 var Endpoint = google.Endpoint
 
-func GetEmailFunc(ctx context.Context, config oauth2.Config, token *oauth2.Token) (emails []string, err error) {
+func GetUserInfoFunc(ctx context.Context, config oauth2.Config, token *oauth2.Token) (username string, emails []string, err error) {
 	client := config.Client(ctx, token)
 
 	service, err := apiv2google.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, fmt.Errorf("failed to instanciate OAuth2 service: %w", err)
+		return "", nil, fmt.Errorf("failed to instanciate OAuth2 service: %w", err)
 	}
 
 	userInfo, err := service.Userinfo.Get().Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get email: %w", err)
+		return "", nil, fmt.Errorf("failed to get email: %w", err)
 	}
 
-	return []string{userInfo.Email}, nil
+	return userInfo.Name, []string{userInfo.Email}, nil
 }

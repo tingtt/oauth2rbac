@@ -10,24 +10,30 @@ import (
 )
 
 type Provider struct {
-	Endpoint     oauth2.Endpoint
-	Scopes       []string
-	GetEmailFunc func(ctx context.Context, config Config, token *oauth2.Token) (emails []string, err error)
-	DisplayName  string
+	Endpoint        oauth2.Endpoint
+	Scopes          []string
+	GetUserInfoFunc func(ctx context.Context, config Config, token *oauth2.Token) (username string, emails []string, err error)
+	DisplayName     string
 }
 
 var Providers = map[string]Provider{
 	"google": {
-		Endpoint:     google.Endpoint,
-		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
-		GetEmailFunc: google.GetEmailFunc,
-		DisplayName:  "Google",
+		Endpoint: google.Endpoint,
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		},
+		GetUserInfoFunc: google.GetUserInfoFunc,
+		DisplayName:     "Google",
 	},
 	"github": {
-		Endpoint:     github.Endpoint,
-		Scopes:       []string{"user:email"},
-		GetEmailFunc: github.GetEmailFunc,
-		DisplayName:  "GitHub",
+		Endpoint: github.Endpoint,
+		Scopes: []string{
+			"user:email",
+			"read:user",
+		},
+		GetUserInfoFunc: github.GetUserInfoFunc,
+		DisplayName:     "GitHub",
 	},
 }
 
