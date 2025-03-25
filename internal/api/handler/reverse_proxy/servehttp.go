@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	oauth2handler "github.com/tingtt/oauth2rbac/internal/api/handler/oauth2"
@@ -35,7 +36,7 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	token, err := h.jwt.Decode(jwtauth.TokenFromCookie(req))
+	token, err := h.jwt.Decode(tokenStrFromRequest(req))
 	if /* unauthorized or token expired */ err != nil {
 		redirectURL := loginURLWithRedirectURL(reqURL.String())
 		h.cookie.SetRedirectURLForAfterLogin(res, reqURL.String())
@@ -94,6 +95,14 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	proxy.ServeHTTP(res, req)
 	logInfo("proxy successful (authorized)")
+}
+
+func tokenStrFromRequest(req *http.Request) string {
+	authorizationToken, _ := strings.CutPrefix(req.Header.Get("Authorization"), "Bearer ")
+	if authorizationToken != "" {
+		return authorizationToken
+	}
+	return jwtauth.TokenFromCookie(req)
 }
 
 func loginURLWithRedirectURL(redirectURL string) string {
