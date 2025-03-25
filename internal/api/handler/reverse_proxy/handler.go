@@ -6,6 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/tingtt/oauth2rbac/internal/acl"
 	cookieutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/cookie"
@@ -17,11 +18,12 @@ import (
 )
 
 type handler struct {
-	proxyMatchKeys  []string // need sorted in descending order by number of characters
-	proxies         map[string]*httputil.ReverseProxy
-	jwt             *jwtauth.JWTAuth
-	publicEndpoints []acl.Scope
-	cookie          cookieutil.Controller
+	proxyMatchKeys          []string // need sorted in descending order by number of characters
+	proxies                 map[string]*httputil.ReverseProxy
+	jwt                     *jwtauth.JWTAuth
+	issuedJWTAvailableSince *time.Time
+	acl                     acl.Provider
+	cookie                  cookieutil.Controller
 }
 
 func NewReverseProxyHandler(config Config, option *handleroption.Option) *handler {
@@ -39,11 +41,13 @@ func NewReverseProxyHandler(config Config, option *handleroption.Option) *handle
 	}
 	proxyMatchKeys := []string{}
 	tree.InOrderTraversal(rootProxyMatchKeys, &proxyMatchKeys)
+	issuedJWTAvailableSince := time.Now()
 	return &handler{
 		proxyMatchKeys,
 		proxies,
 		option.JWTAuth,
-		option.ScopeProvider.PublicEndpoints(),
+		&issuedJWTAvailableSince,
+		option.ACLProvider,
 		option.CookieController,
 	}
 }

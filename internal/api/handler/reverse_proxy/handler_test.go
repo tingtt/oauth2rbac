@@ -16,7 +16,7 @@ func TestNewReverseProxyHandler(t *testing.T) {
 		{ExternalURL: "http://example.com/base/"},
 		{ExternalURL: "http://example.com/-/healthz"},
 	}}
-	handlerOption, _ := handleroption.New(handleroption.WithScope(nil), handleroption.WithSecureCookie(false))
+	handlerOption, _ := handleroption.New(handleroption.WithACL(nil), handleroption.WithSecureCookie(false))
 
 	t.Run("proxyMatchKeys may sorted descending order by number of characters", func(t *testing.T) {
 		t.Parallel()

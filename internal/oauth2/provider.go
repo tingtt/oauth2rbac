@@ -12,7 +12,7 @@ import (
 type Provider struct {
 	Endpoint        oauth2.Endpoint
 	Scopes          []string
-	GetUserInfoFunc func(ctx context.Context, config Config, token *oauth2.Token) (username string, emails []string, err error)
+	GetUserInfoFunc func(ctx context.Context, config Config, token *oauth2.Token) (username, email string, err error)
 	DisplayName     string
 }
 

@@ -12,47 +12,46 @@ import (
 
 var Endpoint = github.Endpoint
 
-func GetUserInfoFunc(ctx context.Context, config oauth2.Config, token *oauth2.Token) (string /* id */, []string /* emails */, error) {
+func GetUserInfoFunc(ctx context.Context, config oauth2.Config, token *oauth2.Token) (string /* id */, string /* email */, error) {
 	client := config.Client(ctx, token)
 
-	emails, err := getEmails(client)
+	email, err := getPrimaryEmail(client)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to get emails from github: %w", err)
+		return "", "", fmt.Errorf("failed to get emails from github: %w", err)
 	}
 
 	id, err := getID(client)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to get id from github: %w", err)
+		return "", "", fmt.Errorf("failed to get id from github: %w", err)
 	}
 
-	return id, emails, nil
+	return id, email, nil
 }
 
-func getEmails(client *http.Client) ([]string, error) {
+func getPrimaryEmail(client *http.Client) (string, error) {
 	resp, err := client.Get("https://api.github.com/user/emails")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("received status code %d", resp.StatusCode)
+		return "", fmt.Errorf("received status code %d", resp.StatusCode)
 	}
 
 	var bodyEmails []struct {
-		Email string `json:"email"`
+		Email   string `json:"email"`
+		Primary bool   `json:"primary"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&bodyEmails); err != nil {
-		return nil, fmt.Errorf("parse error: %w", err)
+		return "", fmt.Errorf("parse error: %w", err)
 	}
 
-	var emails []string
 	for _, email := range bodyEmails {
-		emails = append(emails, email.Email)
+		if email.Primary {
+			return email.Email, nil
+		}
 	}
-	if len(emails) == 0 {
-		return nil, fmt.Errorf("not found")
-	}
-	return emails, nil
+	return "", fmt.Errorf("primary email not found")
 }
 
 func getID(client *http.Client) (string, error) {

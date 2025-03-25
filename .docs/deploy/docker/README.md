@@ -49,21 +49,36 @@ proxies:
     target: "http://web:80/"
 
 acl:
-  "-": #! public
-    - external_url: "https://example.com/"
-      methods: ["GET"]
-    - external_url: "https://www.example.com/"
-      methods: ["GET"]
-  "*@example.com":
-    - external_url: "https://internal.example.com/"
-      methods: ["*"]
-  "<your email>":
-    - external_url: "https://grafana.example.com/"
-      methods: ["*"]
-    - external_url: "https://prometheus.example.com/"
-      methods: ["*"]
-    - external_url: "https://gallery.example.com/"
-      methods: ["*"]
+  "https://example.com":
+    paths:
+      "/":
+        - methods: ["GET"]
+          emails: ["-"] # public
+  "https://www.example.com":
+    paths:
+      "/":
+        - methods: ["GET"]
+          emails: ["-"] # public
+  "https://internal.example.com":
+    paths:
+      "/"
+        - methods: ["*"]
+          emails: ["*@example.com"]
+  "https://grafana.example.com/":
+    paths:
+      "/"
+        - methods: ["*"]
+          emails: ["<your email>"]
+  "https://prometheus.example.com/":
+    paths:
+      "/"
+        - methods: ["*"]
+          emails: ["<your email>"]
+  "https://gallery.example.com/":
+    paths:
+      "/"
+        - methods: ["*"]
+          emails: ["<your email>"]
 ```
 
 ## 3. Create `compose.yaml`
@@ -73,7 +88,7 @@ Create a `compose.yaml` file to define services.
 ```yaml
 services:
   oauth2rbac:
-    image: tingtt/oauth2rbac:v0.6.0
+    image: tingtt/oauth2rbac:v1.0.0
     command: [
       "--port", "80",
       "--jwt-secret", "$(JWT_SECRET)",
@@ -130,7 +145,7 @@ Modify the `compose.yaml` to enable built-in TLS termination:
 ```diff
 services:
   oauth2rbac:
-    image: tingtt/oauth2rbac:v0.6.0
+    image: tingtt/oauth2rbac:v1.0.0
     command: [
 -     "--port", "80",
 +     "--port", "443",

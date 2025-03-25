@@ -65,25 +65,36 @@ data:
         target: "http://homepage.www.svc.cluster.local:3000/"
 
     acl:
-      "-": #! public
-        - external_url: "https://example.com/"
-          methods: ["GET"]
-        - external_url: "https://www.example.com/"
-          methods: ["GET"]
-        - external_url: "https://argocd.example.com/healthz"
-          methods: ["GET"]
-        - external_url: "https://grafana.example.com/api/health"
-          methods: ["GET"]
-      "*@example.com":
-        - external_url: "https://internal.example.com/"
-          methods: ["*"]
-      "<your email>":
-        - external_url: "https://argocd.example.com/"
-          methods: ["*"]
-        - external_url: "https://grafana.example.com/"
-          methods: ["*"]
-        - external_url: "https://prometheus.example.com/"
-          methods: ["*"]
+      "https://example.com":
+        paths:
+          "/":
+            - methods: ["GET"]
+              emails: ["-"] # public
+      "https://www.example.com":
+        paths:
+          "/":
+            - methods: ["GET"]
+              emails: ["-"] # public
+      "https://internal.example.com":
+        paths:
+          "/"
+            - methods: ["*"]
+              emails: ["*@example.com"]
+      "https://grafana.example.com/":
+        paths:
+          "/"
+            - methods: ["*"]
+              emails: ["<your email>"]
+      "https://prometheus.example.com/":
+        paths:
+          "/"
+            - methods: ["*"]
+              emails: ["<your email>"]
+      "https://gallery.example.com/":
+        paths:
+          "/"
+            - methods: ["*"]
+              emails: ["<your email>"]
 ```
 
 ### 3. `oauth2rbac.yaml` (Deployment / Service)
@@ -110,7 +121,7 @@ spec:
     spec:
       containers:
         - name: oauth2rbac
-          image: tingtt/oauth2rbac:v0.6.0
+          image: tingtt/oauth2rbac:v1.0.0
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -259,7 +270,7 @@ Change deployment and service.
       spec:
         containers:
           - name: oauth2rbac
-            image: tingtt/oauth2rbac:v0.6.0
+            image: tingtt/oauth2rbac:v1.0.0
             # ...other configuration omitted...
             args:
               [

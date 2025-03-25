@@ -15,7 +15,7 @@ func Serve(cliOption clioption.CLIOption) error {
 	handler, err := handler.New(cliOption.OAuth2, cliOption.RevProxyConfig,
 		handleroption.WithJWTAuth(cliOption.JWTSignKey),
 		handleroption.WithSecureCookie(cliOption.UseSecureCookie),
-		handleroption.WithScope(cliOption.ACL),
+		handleroption.WithACL(cliOption.ACL),
 	)
 	if err != nil {
 		return err

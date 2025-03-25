@@ -5,8 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 
-	"github.com/tingtt/oauth2rbac/internal/acl"
-
 	"golang.org/x/oauth2"
 )
 
@@ -16,19 +14,19 @@ type Service interface {
 	Config() Config
 	AuthCodeURL(redirectUrl string) string
 	Exchange(ctx context.Context, code string, redirectURL string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
-	GetUserInfo(ctx context.Context, token *oauth2.Token) (username string, emails []acl.Email, err error)
+	GetUserInfo(ctx context.Context, token *oauth2.Token) (username, email string, err error)
 }
 
 func New(
 	c *oauth2.Config,
-	getUserInfoFunc func(ctx context.Context, config oauth2.Config, token *oauth2.Token) (username string, emails []string, err error),
+	getUserInfoFunc func(ctx context.Context, config oauth2.Config, token *oauth2.Token) (username string, email string, err error),
 ) Service {
 	return &config{value: c, getUserInfoFunc: getUserInfoFunc}
 }
 
 type config struct {
 	value           *oauth2.Config
-	getUserInfoFunc func(ctx context.Context, config oauth2.Config, token *oauth2.Token) (username string, emails []string, err error)
+	getUserInfoFunc func(ctx context.Context, config oauth2.Config, token *oauth2.Token) (username string, email string, err error)
 }
 
 func (c *config) Config() Config {
@@ -53,6 +51,6 @@ func (c *config) Exchange(ctx context.Context, code string, redirectURL string, 
 	return config.Exchange(ctx, code, opts...)
 }
 
-func (c *config) GetUserInfo(ctx context.Context, token *oauth2.Token) (string, []acl.Email, error) {
+func (c *config) GetUserInfo(ctx context.Context, token *oauth2.Token) (string, string, error) {
 	return c.getUserInfoFunc(ctx, *c.value, token)
 }

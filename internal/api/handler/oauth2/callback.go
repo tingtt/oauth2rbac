@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
-	"slices"
 	"time"
 
-	"github.com/tingtt/oauth2rbac/internal/acl"
 	"github.com/tingtt/oauth2rbac/internal/api/handler/oauth2/ui"
 	cookieutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/cookie"
 	logutil "github.com/tingtt/oauth2rbac/internal/api/handler/util/log"
@@ -47,7 +44,7 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 		logInfo("failed to exchange code to token", slog.String("provider", providerName), slog.String("error", err.Error()))
 		return
 	}
-	oauth2ProviderUsername, emails, err := oauth2.GetUserInfo(ctx, oauth2Token)
+	oauth2ProviderUsername, email, err := oauth2.GetUserInfo(ctx, oauth2Token)
 	if err != nil {
 		slog.Error("failed to get userinfo", slog.String("provider", providerName), slog.String("error", err.Error()))
 		res.WriteHeader(http.StatusInternalServerError)
@@ -59,38 +56,10 @@ func (h *handler) Callback(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	allowedScopes := []acl.Scope{}
-	for _, scope := range h.scope.Get(emails) {
-		externalURL, err := url.Parse(scope.ExternalURL)
-		if err != nil {
-			slog.Error(fmt.Errorf("failed to parse external url: %w", err).Error())
-			res.WriteHeader(http.StatusInternalServerError)
-			res.Write([]byte(clientSideRedirectConfirmErrorHTML(
-				/* request redirect to */ fmt.Sprintf("/.auth/login/%s", req.URL.RawQuery),
-				/* cause */ "failed to parse external url",
-			)))
-			logInfo("failed to parse external url")
-			return
-		}
-		if /* same origin */ reqURL.Scheme == externalURL.Scheme && reqURL.Host == externalURL.Host {
-			exists := false
-			for i, allowedScope := range allowedScopes {
-				if /* same scope */ allowedScope.ExternalURL == scope.ExternalURL {
-					allowedScopes[i].Methods = append(allowedScopes[i].Methods, scope.Methods...)
-					allowedScopes[i].Methods = slices.Compact(allowedScopes[i].Methods)
-					exists = true
-					break
-				}
-			}
-			if !exists {
-				allowedScopes = append(allowedScopes, scope)
-			}
-		}
-	}
-
 	c := JWTClaims{
-		AllowedScopes: allowedScopes,
-		Emails:        emails,
+		AllowedScopes: h.acl.AllowedScopes(&reqURL, email),
+		Email:         email,
+		Roles:         h.acl.Roles(&reqURL, email),
 	}
 	switch providerName {
 	case "github":

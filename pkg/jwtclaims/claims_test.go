@@ -15,7 +15,7 @@ func ExampleUnmarshal() {
 	_ = new(http.Request)
 
 	// Get JWT, e.g. from cookie, header, etc.
-	cookie := &http.Cookie{Value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGxvd2VkX3Njb3BlcyI6W3siZXh0ZXJuYWxfdXJsIjoiaHR0cDovLzEyNy4wLjAuMTo4MDgwLyIsIm1ldGhvZHMiOlsiKiJdLCJqd3RfZXhwaXJ5X2luIjoxMDgwMDAwMDAwMDAwMCwicm9sZXMiOlsiYWRtaW4iXX1dLCJlbWFpbHMiOlsiYWRtaW5AZXhhbXBsZS50ZXN0Il0sImV4cCI6MTc0MDQ4MzM0OCwiaWF0IjoxNzQwNDc5NzQ4fQ.ZXolVi-yGohljqKm6hUa4JeddEhpHMZeWVL2SeA1CeU"}
+	cookie := &http.Cookie{Value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGxvd2VkX3Njb3BlcyI6eyIvIjpbIioiXSwiL2FkbWluIjpbIioiXX0sImVtYWlsIjoiYWRtaW5AZXhhbXBsZS50ZXN0IiwiZ29vZ2xlIjp7InVzZXJuYW1lIjoiYWRtaW4gZXhhbXBsZSJ9LCJnaXRodWIiOnsiaWQiOiJleGFtcGxlIn19.XlfvenXTSP15as6_8j4Z3DAHej2MgBggRx8Qj4JlKMI"}
 
 	// Parse JWT with parser you are using, e.g. golang-jwt/jwt
 	token, _ := jwt.Parse(cookie.Value, func(t *jwt.Token) (any, error) {
@@ -33,9 +33,13 @@ func ExampleUnmarshal() {
 		claims, _ := jwtclaims.Unmarshal(jsonClaims)
 
 		fmt.Printf("%+v\n", claims.AllowedScopes)
-		fmt.Printf("%+v\n", claims.Emails)
+		fmt.Printf("%+v\n", claims.Email)
+		fmt.Printf("%+v\n", claims.Google)
+		fmt.Printf("%+v\n", claims.GitHub)
 		// Output:
-		// [{ExternalURL:http://127.0.0.1:8080/ Methods:[*] JWTExpiryIn:3h0m0s Roles:[admin]}]
-		// [admin@example.test]
+		// map[/:[*] /admin:[*]]
+		// admin@example.test
+		// &{Username:admin example}
+		// &{ID:example}
 	}
 }

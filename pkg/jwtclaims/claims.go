@@ -7,8 +7,9 @@ import (
 )
 
 type Claims struct {
-	AllowedScopes []acl.Scope `json:"allowed_scopes"`
-	Emails        []acl.Email `json:"emails"`
+	AllowedScopes acl.AllowedScopes `json:"allowed_scopes"`
+	Email         string            `json:"email"`
+	Roles         []string          `json:"roles"`
 
 	GitHub *ClaimsGitHub `json:"github,omitempty"`
 	Google *ClaimsGoogle `json:"google,omitempty"`

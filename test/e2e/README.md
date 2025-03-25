@@ -18,9 +18,13 @@ proxies:
     target: "http://target:80/"
 
 acl:
-  "<your-email-addr>":
-    - external_url: "http://127.0.0.1:8080/"
-      methods: ["GET"]
+  "http://127.0.0.1:8080":
+    paths:
+      "/":
+        - methods: ["GET"]
+          emails: ["<your-email-addr>"]
+    roles:
+      "admin": ["<your-email-addr>"]
 ```
 
 ## Create `test/e2e/.env`

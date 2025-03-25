@@ -35,22 +35,29 @@ proxies:
       Remote-User: ["tingtt"]                    # MIME header key will be normalized
                                                  #  e.g.  "CUSTOM-HEADER" canonicalize to "Custom-Header"
 acl:
-  "http://www.example.com/":          # External URL
-    allowlist:
-      - methods: ["GET"]
-        emails: ["-"]                 # public
-  "http://docs.example.com/":
-    jwt_expiry_in: 10800              # JWT expires in 3 hour (default)
-    allowlist:
-      - methods: ["GET"]
-        emails: ["*"]                 # allow all signed-in user
-      - methods: ["*"]
-        emails: ["*@example.com"]     # allow users with a specific domain
-  "http://admin.example.com/":
-      - methods: ["*"]
-        emails: ["admin@example.com"] # allow specified email user
-        roles: ["admin"]              # role name
-                                      #   It will be included in JWT claim.
+  "http://www.example.com":             # External Origin
+    paths:
+      "/":
+        - methods: ["GET"]              # allow GET
+          emails: ["-"]                 # allow for anonymous use
+  "http://docs.example.com":
+    jwt_expiry_in: "3h"                 # JWT expires in 3 hour (default)
+    paths:
+      "/":
+        - methods: ["GET"]
+          emails: ["*"]                 # allow all signed-in user
+        - methods: ["*"]
+          emails: ["*@example.com"]     # allow users with a specific domain
+    roles:
+      "editor": ["*@example.com"]       # roles
+                                        #   It will be included in JWT claim.
+  "http://admin.example.com":
+    paths:
+      "/":
+        - methods: ["*"]
+          emails: ["admin@example.com"] # allow specified email user
+    roles:
+      "admin": ["admin@example.com"]
 ```
 
 ### Proxies Section

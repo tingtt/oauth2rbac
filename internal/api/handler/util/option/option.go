@@ -18,7 +18,7 @@ func New(_options ...Applier) (*Option, error) {
 }
 
 func validate(option *Option) error {
-	if option.ScopeProvider == nil {
+	if option.ACLProvider == nil {
 		return errors.New("scope provider not provided")
 	}
 	if option.CookieController == nil {
@@ -29,7 +29,7 @@ func validate(option *Option) error {
 
 type Option struct {
 	JWTAuth          *jwtauth.JWTAuth
-	ScopeProvider    acl.ScopeProvider
+	ACLProvider      acl.Provider
 	CookieController cookieutil.Controller
 }
 
@@ -38,8 +38,8 @@ type Applier = options.Applier[Option]
 func WithJWTAuth(jwtSecret string) Applier {
 	return func(o *Option) { o.JWTAuth = jwt.NewAuth(jwtSecret) }
 }
-func WithScope(allowlist acl.Pool) Applier {
-	return func(o *Option) { o.ScopeProvider = acl.NewScopeProvider(allowlist) }
+func WithACL(allowlist acl.Pool) Applier {
+	return func(o *Option) { o.ACLProvider = acl.NewProvider(allowlist) }
 }
 func WithSecureCookie(useSecure bool) Applier {
 	if !useSecure {
