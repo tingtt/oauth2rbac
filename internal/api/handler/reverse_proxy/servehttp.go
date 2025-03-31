@@ -2,6 +2,7 @@ package reverseproxy
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -46,7 +47,11 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		redirectURL := loginURLWithRedirectURL(reqURL.String())
 		h.cookie.SetRedirectURLForAfterLogin(res, reqURL.String())
 		http.Redirect(res, req, redirectURL, http.StatusFound)
-		logInfo("request login", slog.String("err", err.Error()))
+		logInfo("request login", slog.String("reason", err.Error()))
+		if !errors.Is(err, jwt.ErrTokenExpired()) {
+			slog.Error("failed to decode JWT", slog.String("err", err.Error()))
+			slog.Debug("failed to decode JWT", slog.String("jwt", tokenStrFromRequest(req)), slog.String("err", err.Error()))
+		}
 		return
 	}
 
@@ -55,6 +60,8 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(res, "System Error. Please contact administrator.", http.StatusInternalServerError)
 		logInfo("internal error", slog.String("err", err.Error()))
+		slog.Error("failed to unmarshal token claims", slog.String("err", err.Error()))
+		slog.Debug("failed to unmarshal token claims", slog.String("jwt", tokenStrFromRequest(req)), slog.String("err", err.Error()))
 		return
 	}
 
@@ -84,7 +91,8 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	_, newTokenStr, err := renewJWT(newPrivateClaims.MapCollect(), h.jwt.Encode, tokenExpiryIn)
 	if err != nil {
-		slog.Error(fmt.Errorf("failed to renew jwt token: %w", err).Error())
+		slog.Error("failed to renew jwt token", slog.String("err", err.Error()))
+		slog.Debug("failed to renew jwt token", slog.String("jwt", tokenStrFromRequest(req)), slog.String("err", err.Error()))
 		res.WriteHeader(http.StatusInternalServerError)
 		// TODO: error view
 		logInfo("failed to renew jwt token")
