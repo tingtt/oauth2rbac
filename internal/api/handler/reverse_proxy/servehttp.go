@@ -21,7 +21,12 @@ import (
 )
 
 func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	reqURL := urlutil.RequestURL(*req.URL, urlutil.WithRequest(req), urlutil.WithXForwardedHeaders(req.Header))
+	reqURL := urlutil.RequestURL(
+		*req.URL,
+		urlutil.WithRequest(req),
+		urlutil.WithHostHeader(req.Header),
+		urlutil.WithXForwardedHeaders(req.Header),
+	)
 	res, logInfo := logutil.InfoLogger(reqURL, req.Method, rw, req)
 
 	if !h.acl.LoginRequired(&reqURL, req.Method) {

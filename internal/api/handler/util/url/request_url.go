@@ -7,6 +7,7 @@ import (
 
 type option struct {
 	complementWithRequest           func(*url.URL)
+	complementWithHostHeader        func(*url.URL)
 	complementWithXForwardedHeaders func(*url.URL)
 }
 type optionApplier func(*option)
@@ -27,6 +28,18 @@ func WithRequest(req *http.Request) optionApplier {
 			if u.RawPath == "" {
 				u.RawPath = req.RequestURI
 			}
+		}
+	}
+}
+
+func WithHostHeader(header http.Header) optionApplier {
+	host := header.Get("Host")
+	if host == "" {
+		return func(o *option) {}
+	}
+	return func(o *option) {
+		o.complementWithHostHeader = func(url *url.URL) {
+			url.Host = host
 		}
 	}
 }
@@ -68,6 +81,9 @@ func RequestURL(reqURL url.URL, options ...optionApplier) url.URL {
 
 	if option.complementWithRequest != nil {
 		option.complementWithRequest(&reqURL)
+	}
+	if option.complementWithHostHeader != nil {
+		option.complementWithHostHeader(&reqURL)
 	}
 	if option.complementWithXForwardedHeaders != nil {
 		option.complementWithXForwardedHeaders(&reqURL)
