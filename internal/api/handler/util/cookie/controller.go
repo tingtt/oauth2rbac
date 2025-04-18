@@ -2,6 +2,7 @@ package cookieutil
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -43,7 +44,9 @@ func (c *controller) SetRedirectURLForAfterLogin(res *logutil.CustomResponseWrit
 }
 
 func (c *controller) skipSetRedirectURLForAfterLogin(reqURL string) bool {
-	return strings.HasSuffix(reqURL, "/favicon.ico")
+	url, _ := url.Parse(reqURL)
+	return url.Path == "/favicon.ico" ||
+		strings.HasPrefix(url.Path, "/api/")
 }
 
 func (c *controller) SetJWT(rw http.ResponseWriter, jwt string) {
