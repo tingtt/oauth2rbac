@@ -46,7 +46,9 @@ func (c *controller) SetRedirectURLForAfterLogin(res *logutil.CustomResponseWrit
 func (c *controller) skipSetRedirectURLForAfterLogin(reqURL string) bool {
 	url, _ := url.Parse(reqURL)
 	return url.Path == "/favicon.ico" ||
-		strings.HasPrefix(url.Path, "/api/")
+		strings.HasPrefix(url.Path, "/api/") ||
+		strings.HasPrefix(url.Path, "/.well-known/") ||
+		strings.HasPrefix(url.Path, "/_next/")
 }
 
 func (c *controller) SetJWT(rw http.ResponseWriter, jwt string) {
