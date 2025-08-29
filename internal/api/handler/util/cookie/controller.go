@@ -48,7 +48,8 @@ func (c *controller) skipSetRedirectURLForAfterLogin(reqURL string) bool {
 	return url.Path == "/favicon.ico" ||
 		strings.HasPrefix(url.Path, "/api/") ||
 		strings.HasPrefix(url.Path, "/.well-known/") ||
-		strings.HasPrefix(url.Path, "/_next/")
+		strings.HasPrefix(url.Path, "/_next/") ||
+		strings.HasSuffix(url.Path, ".svg")
 }
 
 func (c *controller) SetJWT(rw http.ResponseWriter, jwt string) {
